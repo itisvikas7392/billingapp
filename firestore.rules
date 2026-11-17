@@ -1,0 +1,402 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// This security rules file assumes the following data structures:
+//
+// Collection: /invoices/{invoiceId}
+// Document ID: string (e.g. 'INV-000155', 'inv-1731859200000')
+// Fields:
+//   - id: string (optional, max 100 chars, immutable)
+//   - invoiceNumber: string (required, 1-50 chars)
+//   - invoiceType: string (optional, max 100 chars)
+//   - copyType: string (optional, max 50 chars)
+//   - date: string (required, 8-35 chars)
+//   - terms: string (optional, max 200 chars)
+//   - dueDate: string (optional, max 35 chars)
+//   - customer: map (required, keys: name [required, 1-200 chars], phone, email, address, gstin)
+//   - items: list (required, 1-100 elements, each row requires description, rate, amount)
+//   - subTotal: number (optional, >= 0, <= 1000000000)
+//   - discountType: string (optional, 'flat' | 'percent' | '')
+//   - discountValue: number (optional, >= 0)
+//   - discountAmount: number (optional, >= 0)
+//   - taxType: string (optional, 'none' | 'gst_intra' | 'gst_inter' | '')
+//   - taxRate: number (optional, >= 0, <= 100)
+//   - taxAmount: number (optional, >= 0)
+//   - total: number (required, >= 0, <= 1000000000)
+//   - paymentMade: number (required, >= 0, <= 1000000000)
+//   - balanceDue: number (required, >= 0, <= 1000000000)
+//   - notes: string (optional, max 2000 chars)
+//   - status: string (required, 'paid' | 'unpaid' | 'partial' | 'draft' | 'cancelled')
+//   - createdAt: string or timestamp (optional, max 50 chars, immutable)
+//   - updatedAt: string or timestamp (optional, max 50 chars)
+//   - syncedAt: string or timestamp (optional, max 50 chars)
+//   - uid: string (optional, max 128 chars, immutable owner UID)
+//   - ownerId: string (optional, max 128 chars, immutable owner ID)
+//
+// Collection: /customers/{customerId}
+// Document ID: string (e.g. 'cust-1' or generated customer ID)
+// Fields:
+//   - id: string (optional, max 100 chars, immutable)
+//   - name: string (required, 1-200 chars)
+//   - phone: string (optional, max 30 chars)
+//   - email: string (optional, max 100 chars)
+//   - address: string (optional, max 500 chars)
+//   - gstin: string (optional, max 30 chars)
+//   - createdAt: string or timestamp (optional, max 50 chars, immutable)
+//   - updatedAt: string or timestamp (optional, max 50 chars)
+//   - uid: string (optional, max 128 chars, immutable)
+//   - ownerId: string (optional, max 128 chars, immutable)
+//
+// Collection: /catalog/{itemId}
+// Document ID: string (e.g. 'item-1' or generated item ID)
+// Fields:
+//   - id: string (optional, max 100 chars, immutable)
+//   - name: string (required, 1-200 chars)
+//   - rate: number (required, >= 0, <= 100000000)
+//   - hsn: string (optional, max 30 chars)
+//   - description: string (optional, max 500 chars)
+//   - createdAt: string or timestamp (optional, max 50 chars, immutable)
+//   - updatedAt: string or timestamp (optional, max 50 chars)
+//   - uid: string (optional, max 128 chars, immutable)
+//   - ownerId: string (optional, max 128 chars, immutable)
+//
+// Collection: /settings/{settingId}
+// Document ID: string (e.g. 'profile', 'business', or generated ID)
+// Fields:
+//   - businessName: string (required, 1-200 chars)
+//   - phone: string (optional, max 30 chars)
+//   - upiId: string (optional, max 100 chars)
+//   - email: string (optional, max 100 chars)
+//   - addressLine1: string (optional, max 200 chars)
+//   - addressLine2: string (optional, max 200 chars)
+//   - country: string (optional, max 100 chars)
+//   - gstin: string (optional, max 30 chars)
+//   - pan: string (optional, max 30 chars)
+//   - bankName: string (optional, max 100 chars)
+//   - accountNumber: string (optional, max 50 chars)
+//   - ifscCode: string (optional, max 30 chars)
+//   - invoicePrefix: string (optional, max 20 chars)
+//   - nextInvoiceNumber: number (optional, >= 1, <= 999999999)
+//   - defaultTerms: string (optional, max 300 chars)
+//   - defaultNotes: string (optional, max 1000 chars)
+//   - currencySymbol: string (optional, max 10 chars)
+//   - showUpiQr: bool (optional)
+//   - invoiceTitle: string (optional, max 100 chars)
+//   - footerTagline: string (optional, max 300 chars)
+//   - googleSheetUrl: string (optional, max 500 chars)
+//   - firebaseConfig: map or string (optional, max 2000 chars)
+//   - updatedAt: string or timestamp (optional, max 50 chars)
+//   - uid: string (optional, max 128 chars, immutable)
+//   - ownerId: string (optional, max 128 chars, immutable)
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Common Helper Functions
+    // ===============================================================
+
+    // Check if the user is authenticated via Firebase Auth
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if user is the resource owner (when scoped by uid or ownerId)
+    function isOwnerOrAuthorized(docData) {
+      return isAuthenticated() &&
+        (!('uid' in docData) || docData.uid == request.auth.uid) &&
+        (!('ownerId' in docData) || docData.ownerId == request.auth.uid);
+    }
+
+    // Ensure UID / Owner fields are not tampered with on create
+    function uidUnchanged() {
+      return (!('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid) &&
+             (!('ownerId' in request.resource.data) || request.resource.data.ownerId == request.auth.uid);
+    }
+
+    // Ensure UID / Owner fields cannot be modified on update (Prevents Ownership Hijacking)
+    function uidNotModified() {
+      return (!('uid' in resource.data) || ('uid' in request.resource.data && request.resource.data.uid == resource.data.uid)) &&
+             (!('ownerId' in resource.data) || ('ownerId' in request.resource.data && request.resource.data.ownerId == resource.data.ownerId));
+    }
+
+    // ===============================================================
+    // Invoice Domain Validators
+    // ===============================================================
+
+    // Immutable field protection for invoice documents
+    function isInvoiceImmutableUnchanged() {
+      return (!('id' in resource.data) || ('id' in request.resource.data && request.resource.data.id == resource.data.id)) &&
+             (!('createdAt' in resource.data) || ('createdAt' in request.resource.data && request.resource.data.createdAt == resource.data.createdAt));
+    }
+
+    // Core validation: invoice number, date, status, nested customer and items
+    function isValidInvoiceCore(data) {
+      return data.invoiceNumber is string &&
+             data.invoiceNumber.size() >= 1 && data.invoiceNumber.size() <= 50 &&
+             data.date is string &&
+             data.date.size() >= 8 && data.date.size() <= 35 &&
+             data.status is string &&
+             data.status in ['paid', 'unpaid', 'partial', 'draft', 'cancelled'] &&
+             isValidInvoiceCustomer(data.customer) &&
+             isValidInvoiceItems(data.items);
+    }
+
+    // Validates customer map nested inside an invoice
+    function isValidInvoiceCustomer(cust) {
+      return cust is map &&
+             cust.keys().hasAll(['name']) &&
+             cust.keys().hasOnly(['name', 'phone', 'email', 'address', 'gstin']) &&
+             cust.name is string && cust.name.size() >= 1 && cust.name.size() <= 200 &&
+             (!('phone' in cust) || (cust.phone is string && cust.phone.size() <= 30)) &&
+             (!('email' in cust) || (cust.email is string && cust.email.size() <= 100)) &&
+             (!('address' in cust) || (cust.address is string && cust.address.size() <= 500)) &&
+             (!('gstin' in cust) || (cust.gstin is string && cust.gstin.size() <= 30));
+    }
+
+    // Validates invoice items array structure and bounds (Resource Exhaustion / DoS protection)
+    function isValidInvoiceItems(items) {
+      return items is list &&
+             items.size() >= 1 && items.size() <= 100 &&
+             isValidInvoiceItemRow(items[0]);
+    }
+
+    // Validates item line row fields
+    function isValidInvoiceItemRow(item) {
+      return item is map &&
+             item.keys().hasAll(['description', 'rate', 'amount']) &&
+             item.keys().hasOnly(['id', 'description', 'hsn', 'qty', 'rate', 'taxPercent', 'amount']) &&
+             item.description is string && item.description.size() >= 1 && item.description.size() <= 500 &&
+             item.rate is number && item.rate >= 0 && item.rate <= 100000000 &&
+             item.amount is number && item.amount >= 0 && item.amount <= 1000000000 &&
+             (!('qty' in item) || (item.qty is number && item.qty >= 0 && item.qty <= 1000000)) &&
+             (!('hsn' in item) || (item.hsn is string && item.hsn.size() <= 30)) &&
+             (!('id' in item) || (item.id is string && item.id.size() <= 50)) &&
+             (!('taxPercent' in item) || (item.taxPercent is number && item.taxPercent >= 0 && item.taxPercent <= 100));
+    }
+
+    // Validates non-negative financial values
+    function isValidInvoiceFinancials(data) {
+      return data.total is number && data.total >= 0 && data.total <= 1000000000 &&
+             data.paymentMade is number && data.paymentMade >= 0 && data.paymentMade <= 1000000000 &&
+             data.balanceDue is number && data.balanceDue >= 0 && data.balanceDue <= 1000000000 &&
+             (!('subTotal' in data) || (data.subTotal is number && data.subTotal >= 0 && data.subTotal <= 1000000000)) &&
+             (!('discountValue' in data) || (data.discountValue is number && data.discountValue >= 0)) &&
+             (!('discountAmount' in data) || (data.discountAmount is number && data.discountAmount >= 0)) &&
+             (!('taxRate' in data) || (data.taxRate is number && data.taxRate >= 0 && data.taxRate <= 100)) &&
+             (!('taxAmount' in data) || (data.taxAmount is number && data.taxAmount >= 0));
+    }
+
+    // Validates optional strings and metadata
+    function isValidInvoiceOptionalFields(data) {
+      return (!('invoiceType' in data) || (data.invoiceType is string && data.invoiceType.size() <= 100)) &&
+             (!('copyType' in data) || (data.copyType is string && data.copyType.size() <= 50)) &&
+             (!('terms' in data) || (data.terms is string && data.terms.size() <= 200)) &&
+             (!('dueDate' in data) || (data.dueDate is string && data.dueDate.size() <= 35)) &&
+             (!('discountType' in data) || (data.discountType is string && data.discountType in ['flat', 'percent', ''])) &&
+             (!('taxType' in data) || (data.taxType is string && data.taxType in ['none', 'gst_intra', 'gst_inter', ''])) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000)) &&
+             (!('id' in data) || (data.id is string && data.id.size() <= 100)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50) || data.createdAt is timestamp) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50) || data.updatedAt is timestamp) &&
+             (!('syncedAt' in data) || (data.syncedAt is string && data.syncedAt.size() <= 50) || data.syncedAt is timestamp) &&
+             (!('uid' in data) || (data.uid is string && data.uid.size() <= 128)) &&
+             (!('ownerId' in data) || (data.ownerId is string && data.ownerId.size() <= 128));
+    }
+
+    // Complete invoice validator: Enforces mandatory fields, schema lock, and field constraints
+    function isValidInvoice(data) {
+      return data.keys().hasAll([
+               'invoiceNumber', 'date', 'total', 'paymentMade', 'balanceDue', 'customer', 'items', 'status'
+             ]) &&
+             data.keys().hasOnly([
+               'id', 'invoiceNumber', 'invoiceType', 'copyType', 'date', 'terms', 'dueDate',
+               'customer', 'items', 'subTotal', 'discountType', 'discountValue', 'discountAmount',
+               'taxType', 'taxRate', 'taxAmount', 'total', 'paymentMade', 'balanceDue',
+               'notes', 'status', 'createdAt', 'updatedAt', 'syncedAt', 'uid', 'ownerId'
+             ]) &&
+             isValidInvoiceCore(data) &&
+             isValidInvoiceFinancials(data) &&
+             isValidInvoiceOptionalFields(data);
+    }
+
+    // ===============================================================
+    // Customer Domain Validators
+    // ===============================================================
+
+    function isCustomerImmutableUnchanged() {
+      return (!('id' in resource.data) || ('id' in request.resource.data && request.resource.data.id == resource.data.id)) &&
+             (!('createdAt' in resource.data) || ('createdAt' in request.resource.data && request.resource.data.createdAt == resource.data.createdAt));
+    }
+
+    function isValidCustomer(data) {
+      return data.keys().hasAll(['name']) &&
+             data.keys().hasOnly([
+               'id', 'name', 'phone', 'email', 'address', 'gstin',
+               'createdAt', 'updatedAt', 'uid', 'ownerId'
+             ]) &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 200 &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 30)) &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 100)) &&
+             (!('address' in data) || (data.address is string && data.address.size() <= 500)) &&
+             (!('gstin' in data) || (data.gstin is string && data.gstin.size() <= 30)) &&
+             (!('id' in data) || (data.id is string && data.id.size() <= 100)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50) || data.createdAt is timestamp) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50) || data.updatedAt is timestamp) &&
+             (!('uid' in data) || (data.uid is string && data.uid.size() <= 128)) &&
+             (!('ownerId' in data) || (data.ownerId is string && data.ownerId.size() <= 128));
+    }
+
+    // ===============================================================
+    // Catalog Domain Validators
+    // ===============================================================
+
+    function isCatalogImmutableUnchanged() {
+      return (!('id' in resource.data) || ('id' in request.resource.data && request.resource.data.id == resource.data.id)) &&
+             (!('createdAt' in resource.data) || ('createdAt' in request.resource.data && request.resource.data.createdAt == resource.data.createdAt));
+    }
+
+    function isValidCatalogItem(data) {
+      return data.keys().hasAll(['name', 'rate']) &&
+             data.keys().hasOnly([
+               'id', 'name', 'rate', 'hsn', 'description',
+               'createdAt', 'updatedAt', 'uid', 'ownerId'
+             ]) &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 200 &&
+             data.rate is number && data.rate >= 0 && data.rate <= 100000000 &&
+             (!('hsn' in data) || (data.hsn is string && data.hsn.size() <= 30)) &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 500)) &&
+             (!('id' in data) || (data.id is string && data.id.size() <= 100)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50) || data.createdAt is timestamp) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50) || data.updatedAt is timestamp) &&
+             (!('uid' in data) || (data.uid is string && data.uid.size() <= 128)) &&
+             (!('ownerId' in data) || (data.ownerId is string && data.ownerId.size() <= 128));
+    }
+
+    // ===============================================================
+    // Settings Domain Validators
+    // ===============================================================
+
+    function isValidSetting(data) {
+      return data.keys().hasAll(['businessName']) &&
+             data.keys().hasOnly([
+               'businessName', 'phone', 'upiId', 'email', 'addressLine1', 'addressLine2',
+               'country', 'gstin', 'pan', 'bankName', 'accountNumber', 'ifscCode',
+               'invoicePrefix', 'nextInvoiceNumber', 'defaultTerms', 'defaultNotes',
+               'currencySymbol', 'showUpiQr', 'invoiceTitle', 'footerTagline',
+               'googleSheetUrl', 'firebaseConfig', 'updatedAt', 'uid', 'ownerId'
+             ]) &&
+             data.businessName is string && data.businessName.size() >= 1 && data.businessName.size() <= 200 &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 30)) &&
+             (!('upiId' in data) || (data.upiId is string && data.upiId.size() <= 100)) &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 100)) &&
+             (!('addressLine1' in data) || (data.addressLine1 is string && data.addressLine1.size() <= 200)) &&
+             (!('addressLine2' in data) || (data.addressLine2 is string && data.addressLine2.size() <= 200)) &&
+             (!('country' in data) || (data.country is string && data.country.size() <= 100)) &&
+             (!('gstin' in data) || (data.gstin is string && data.gstin.size() <= 30)) &&
+             (!('pan' in data) || (data.pan is string && data.pan.size() <= 30)) &&
+             (!('bankName' in data) || (data.bankName is string && data.bankName.size() <= 100)) &&
+             (!('accountNumber' in data) || (data.accountNumber is string && data.accountNumber.size() <= 50)) &&
+             (!('ifscCode' in data) || (data.ifscCode is string && data.ifscCode.size() <= 30)) &&
+             (!('invoicePrefix' in data) || (data.invoicePrefix is string && data.invoicePrefix.size() <= 20)) &&
+             (!('nextInvoiceNumber' in data) || (data.nextInvoiceNumber is number && data.nextInvoiceNumber >= 1 && data.nextInvoiceNumber <= 999999999)) &&
+             (!('defaultTerms' in data) || (data.defaultTerms is string && data.defaultTerms.size() <= 300)) &&
+             (!('defaultNotes' in data) || (data.defaultNotes is string && data.defaultNotes.size() <= 1000)) &&
+             (!('currencySymbol' in data) || (data.currencySymbol is string && data.currencySymbol.size() <= 10)) &&
+             (!('showUpiQr' in data) || (data.showUpiQr is bool)) &&
+             (!('invoiceTitle' in data) || (data.invoiceTitle is string && data.invoiceTitle.size() <= 100)) &&
+             (!('footerTagline' in data) || (data.footerTagline is string && data.footerTagline.size() <= 300)) &&
+             (!('googleSheetUrl' in data) || (data.googleSheetUrl is string && data.googleSheetUrl.size() <= 500)) &&
+             (!('firebaseConfig' in data) || (data.firebaseConfig is map || (data.firebaseConfig is string && data.firebaseConfig.size() <= 2000))) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50) || data.updatedAt is timestamp) &&
+             (!('uid' in data) || (data.uid is string && data.uid.size() <= 128)) &&
+             (!('ownerId' in data) || (data.ownerId is string && data.ownerId.size() <= 128));
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // 1. Invoices Collection
+    match /invoices/{invoiceId} {
+      // Must be authenticated and authorized to read
+      allow read: if isAuthenticated() && isOwnerOrAuthorized(resource.data);
+
+      // Create requires authentication, proper ownership, and strict schema validation
+      allow create: if isAuthenticated() &&
+                    uidUnchanged() &&
+                    isValidInvoice(request.resource.data);
+
+      // Update requires ownership, immutable field protection, and re-validation (Validator Function Pattern)
+      allow update: if isAuthenticated() &&
+                    isOwnerOrAuthorized(resource.data) &&
+                    uidNotModified() &&
+                    isInvoiceImmutableUnchanged() &&
+                    isValidInvoice(request.resource.data);
+
+      // Delete requires ownership/authorization
+      allow delete: if isAuthenticated() && isOwnerOrAuthorized(resource.data);
+    }
+
+    // 2. Customers Collection
+    match /customers/{customerId} {
+      allow read: if isAuthenticated() && isOwnerOrAuthorized(resource.data);
+
+      allow create: if isAuthenticated() &&
+                    uidUnchanged() &&
+                    isValidCustomer(request.resource.data);
+
+      allow update: if isAuthenticated() &&
+                    isOwnerOrAuthorized(resource.data) &&
+                    uidNotModified() &&
+                    isCustomerImmutableUnchanged() &&
+                    isValidCustomer(request.resource.data);
+
+      allow delete: if isAuthenticated() && isOwnerOrAuthorized(resource.data);
+    }
+
+    // 3. Catalog Collection
+    match /catalog/{itemId} {
+      allow read: if isAuthenticated() && isOwnerOrAuthorized(resource.data);
+
+      allow create: if isAuthenticated() &&
+                    uidUnchanged() &&
+                    isValidCatalogItem(request.resource.data);
+
+      allow update: if isAuthenticated() &&
+                    isOwnerOrAuthorized(resource.data) &&
+                    uidNotModified() &&
+                    isCatalogImmutableUnchanged() &&
+                    isValidCatalogItem(request.resource.data);
+
+      allow delete: if isAuthenticated() && isOwnerOrAuthorized(resource.data);
+    }
+
+    // 4. Business Settings Collection
+    match /settings/{settingId} {
+      allow read: if isAuthenticated() && isOwnerOrAuthorized(resource.data);
+
+      allow create: if isAuthenticated() &&
+                    uidUnchanged() &&
+                    isValidSetting(request.resource.data);
+
+      allow update: if isAuthenticated() &&
+                    isOwnerOrAuthorized(resource.data) &&
+                    uidNotModified() &&
+                    isValidSetting(request.resource.data);
+
+      allow delete: if isAuthenticated() && isOwnerOrAuthorized(resource.data);
+    }
+
+    // ===============================================================
+    // Default Deny Root Fallback
+    // ===============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
