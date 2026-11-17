@@ -1,0 +1,118 @@
+{
+  "project": "VikasBillingApp",
+  "branchName": "ralph/billing-app-github-pages",
+  "description": "Tax & Commercial Billing Web App replicating INV-000155.pdf layout with LocalStorage persistence, GST/Tax calculations, Indian Rupee words converter, dynamic UPI QR code, print/PDF export, and GitHub Pages deployment.",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Create LocalStorage state management and default data schema",
+      "description": "As a user, I want my invoices, business profile, customers, and product catalogs to persist in localStorage so I don't lose data on page reload.",
+      "acceptanceCriteria": [
+        "Create storage.js with methods: getInvoices, saveInvoice, deleteInvoice, getSettings, saveSettings, getItems, saveItem, getCustomers, saveCustomer",
+        "Initialize default business profile with details from INV-000155 (Vikas Digital Signature Shop, Gursahaiganj, UP 209722, Phone 7392045049, itisvikasprajapati@gmail.com)",
+        "Seed default invoice INV-000155 with Bharat Singh as customer and DSC Certificate + DSC Token items",
+        "Provide JSON export and import capabilities for data backup and restoration",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Implemented in js/storage.js"
+    },
+    {
+      "id": "US-002",
+      "title": "Implement Indian currency number-to-words converter",
+      "description": "As an accountant/business owner, I want invoice totals to automatically convert into Indian Rupees in words (Lakhs/Crores format) as seen in INV-000155.pdf.",
+      "acceptanceCriteria": [
+        "Create number-to-words.js with function convertNumberToIndianWords(amount)",
+        "Correctly converts 2500.00 into 'Indian Rupee Two Thousand Five Hundred Only'",
+        "Handles single digits, tens, hundreds, thousands, lakhs, and crores",
+        "Supports decimal paise conversion when amount has fractional paise",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Implemented in js/number-to-words.js"
+    },
+    {
+      "id": "US-003",
+      "title": "Implement UPI QR code generator for instant payment",
+      "description": "As a merchant, I want a dynamic UPI QR code rendered on the invoice so customers can scan with PhonePe, Google Pay, or Paytm to pay the balance due.",
+      "acceptanceCriteria": [
+        "Create qr.js using qrcode-generator or standalone canvas-based QR renderer",
+        "Generates upi://pay?pa={upiId}&pn={businessName}&am={balanceDue}&cu=INR&tn={invoiceNo}",
+        "Updates dynamically when balance due or invoice number changes",
+        "Toggle option in settings to show or hide UPI QR code on the printed invoice",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Implemented in js/qr.js"
+    },
+    {
+      "id": "US-004",
+      "title": "Build pixel-perfect invoice template replicating INV-000155.pdf",
+      "description": "As a user, I want the printed and previewed invoice to mirror the layout of INV-000155.pdf exactly, including the header, dark table headers, totals block, and Original/Duplicate badges.",
+      "acceptanceCriteria": [
+        "Create invoice-template.js rendering the exact layout of INV-000155.pdf",
+        "Includes Business header with name, address, phone, and email",
+        "Includes TAX INVOICE title, # INV-000155, Balance Due widget, Bill To section, and Invoice/Due dates",
+        "Line items table matches PDF styling (#, Item & Description, Qty, Rate, Amount)",
+        "Includes Sub Total, Total, Payment Made (-), Balance Due shaded row, and Total In Words",
+        "Includes Notes ('Thanks for your business.') and Authorized Signature area",
+        "Includes toggle for ORIGINAL / DUPLICATE copies",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Implemented in js/invoice-template.js and css/styles.css"
+    },
+    {
+      "id": "US-005",
+      "title": "Build interactive invoice editor and management dashboard UI",
+      "description": "As a user, I want an intuitive dashboard where I can edit invoices, add line items, calculate taxes, record payments, and view invoice history.",
+      "acceptanceCriteria": [
+        "Create responsive layout with Invoice Editor, Live Preview panel, and Invoices List tab",
+        "Add, edit, remove line items with automatic subtotal, tax (GST/CGST/SGST/IGST), discount, and balance due calculations",
+        "Save invoice, create new invoice, duplicate existing invoice, and delete invoice",
+        "Status badges: Paid, Partial, Unpaid",
+        "Customer autocomplete / quick-select from saved customers",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Implemented in index.html, js/app.js, and css/styles.css"
+    },
+    {
+      "id": "US-006",
+      "title": "Implement print-to-PDF and direct PDF download functionality",
+      "description": "As a user, I want to print or save the invoice as an A4 PDF with clean typography, proper page margins, and zero UI clutter.",
+      "acceptanceCriteria": [
+        "Add @media print styles that hide buttons, navigation, and sidebar, isolating only the A4 invoice sheet",
+        "Support 1-click browser Print dialog (Ctrl+P or Print button)",
+        "Support direct PDF download using HTML5 canvas / print renderer",
+        "Options to print ORIGINAL copy, DUPLICATE copy, or both pages consecutively like the source PDF",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Implemented in css/styles.css and js/app.js"
+    },
+    {
+      "id": "US-007",
+      "title": "Configure GitHub Pages deployment and documentation",
+      "description": "As a developer, I want this app to be 100% compatible with GitHub Pages with zero build step and include an automated GitHub Actions deployment workflow.",
+      "acceptanceCriteria": [
+        "All asset references in index.html and JS use relative paths (./) for subdirectory hosting",
+        "Create .github/workflows/deploy.yml for GitHub Pages automated deployment",
+        "Create comprehensive README.md with live demo setup, features, and deployment instructions",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Configured relative paths, workflow, and README.md"
+    }
+  ]
+}

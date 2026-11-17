@@ -1,0 +1,273 @@
+/**
+ * LocalStorage Manager for Vikas Billing App
+ * Persists business settings, invoices, customer list, and item catalog.
+ */
+
+const STORAGE_KEYS = {
+  SETTINGS: 'vikas_billing_settings_v1',
+  INVOICES: 'vikas_billing_invoices_v1',
+  CUSTOMERS: 'vikas_billing_customers_v1',
+  ITEMS: 'vikas_billing_items_v1',
+  ACTIVE_INVOICE_ID: 'vikas_billing_active_invoice_id_v1'
+};
+
+const DEFAULT_SETTINGS = {
+  businessName: 'Vikas Digital Signature Shop',
+  addressLine1: 'Ram Krishan Nagar Gursahaiganj',
+  addressLine2: 'Uttar Pradesh 209722',
+  country: 'India',
+  phone: '7392045049',
+  email: 'itisvikasprajapati@gmail.com',
+  gstin: '',
+  pan: '',
+  upiId: '7392045049@upi',
+  bankName: 'State Bank of India',
+  accountNumber: '',
+  ifscCode: '',
+  invoicePrefix: 'INV-',
+  nextInvoiceNumber: 156,
+  defaultTerms: 'Due on Receipt',
+  defaultNotes: 'Thanks for your business.',
+  currencySymbol: '₹',
+  showUpiQr: true,
+  invoiceTitle: 'TAX INVOICE',
+  footerTagline: 'Crafted with ease using Vikas Billing | Fast & Professional'
+};
+
+const DEFAULT_ITEMS = [
+  { id: 'item-1', name: 'Digital Signature Certificate', rate: 2000.00, hsn: '998313', description: 'Class 3 DSC (2 Years)' },
+  { id: 'item-2', name: 'DSC TOKEN', rate: 500.00, hsn: '8471', description: 'HYP2003 / ProxKey USB Crypto Token' },
+  { id: 'item-3', name: 'DSC Renewal', rate: 1500.00, hsn: '998313', description: 'Class 3 Signature Only Renewal' },
+  { id: 'item-4', name: 'Combo DSC + Token', rate: 2400.00, hsn: '998313', description: 'Complete Setup' }
+];
+
+const DEFAULT_CUSTOMERS = [
+  {
+    id: 'cust-1',
+    name: 'BHARAT SINGH',
+    phone: '',
+    email: '',
+    address: 'Gursahaiganj, Uttar Pradesh',
+    gstin: ''
+  }
+];
+
+const DEFAULT_INVOICE_SAMPLE = {
+  id: 'inv-sample-155',
+  invoiceNumber: 'INV-000155',
+  invoiceType: 'TAX INVOICE',
+  copyType: 'ORIGINAL', // 'ORIGINAL' or 'DUPLICATE'
+  date: '2026-11-17',
+  terms: 'Due on Receipt',
+  dueDate: '2026-11-17',
+  customer: {
+    name: 'BHARAT SINGH',
+    address: '',
+    phone: '',
+    email: '',
+    gstin: ''
+  },
+  items: [
+    {
+      id: 'row-1',
+      description: 'Digital Signature Certificate',
+      hsn: '',
+      qty: 1.00,
+      rate: 2000.00,
+      taxPercent: 0,
+      amount: 2000.00
+    },
+    {
+      id: 'row-2',
+      description: 'DSC TOKEN',
+      hsn: '',
+      qty: 1.00,
+      rate: 500.00,
+      taxPercent: 0,
+      amount: 500.00
+    }
+  ],
+  subTotal: 2500.00,
+  discountType: 'flat', // 'flat' or 'percent'
+  discountValue: 0,
+  discountAmount: 0,
+  taxType: 'none', // 'none', 'gst_intra' (CGST+SGST), 'gst_inter' (IGST)
+  taxRate: 0,
+  taxAmount: 0,
+  total: 2500.00,
+  paymentMade: 2500.00,
+  balanceDue: 0.00,
+  notes: 'Thanks for your business.',
+  status: 'paid', // 'paid', 'unpaid', 'partial'
+  createdAt: '2026-11-17T12:00:00.000Z',
+  updatedAt: '2026-11-17T12:00:00.000Z'
+};
+
+const StorageManager = {
+  getSettings() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : { ...DEFAULT_SETTINGS };
+    } catch (e) {
+      console.warn('Storage read failed:', e);
+      return { ...DEFAULT_SETTINGS };
+    }
+  },
+
+  saveSettings(settings) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+      return true;
+    } catch (e) {
+      console.error('Failed to save settings:', e);
+      return false;
+    }
+  },
+
+  getInvoices() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.INVOICES);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+      // Seed with default sample invoice
+      const initial = [DEFAULT_INVOICE_SAMPLE];
+      this.saveInvoices(initial);
+      return initial;
+    } catch (e) {
+      console.warn('Failed to load invoices:', e);
+      return [DEFAULT_INVOICE_SAMPLE];
+    }
+  },
+
+  saveInvoices(invoices) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(invoices));
+      return true;
+    } catch (e) {
+      console.error('Failed to save invoices:', e);
+      return false;
+    }
+  },
+
+  getInvoiceById(id) {
+    const list = this.getInvoices();
+    return list.find(inv => inv.id === id) || null;
+  },
+
+  saveInvoice(invoice) {
+    const list = this.getInvoices();
+    const index = list.findIndex(item => item.id === invoice.id);
+    invoice.updatedAt = new Date().toISOString();
+
+    if (index >= 0) {
+      list[index] = invoice;
+    } else {
+      invoice.createdAt = invoice.createdAt || new Date().toISOString();
+      list.unshift(invoice);
+    }
+    this.saveInvoices(list);
+    this.setActiveInvoiceId(invoice.id);
+    return invoice;
+  },
+
+  deleteInvoice(id) {
+    let list = this.getInvoices();
+    list = list.filter(inv => inv.id !== id);
+    this.saveInvoices(list);
+    return list;
+  },
+
+  getActiveInvoiceId() {
+    return localStorage.getItem(STORAGE_KEYS.ACTIVE_INVOICE_ID) || DEFAULT_INVOICE_SAMPLE.id;
+  },
+
+  setActiveInvoiceId(id) {
+    localStorage.setItem(STORAGE_KEYS.ACTIVE_INVOICE_ID, id);
+  },
+
+  getCustomers() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.CUSTOMERS);
+      if (saved) return JSON.parse(saved);
+      this.saveCustomers(DEFAULT_CUSTOMERS);
+      return DEFAULT_CUSTOMERS;
+    } catch (e) {
+      return DEFAULT_CUSTOMERS;
+    }
+  },
+
+  saveCustomers(customers) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(customers));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
+  addCustomerIfNew(customer) {
+    if (!customer || !customer.name) return;
+    const list = this.getCustomers();
+    const existing = list.find(c => c.name.trim().toLowerCase() === customer.name.trim().toLowerCase());
+    if (!existing) {
+      list.push({
+        id: 'cust-' + Date.now(),
+        name: customer.name.trim(),
+        phone: customer.phone || '',
+        email: customer.email || '',
+        address: customer.address || '',
+        gstin: customer.gstin || ''
+      });
+      this.saveCustomers(list);
+    }
+  },
+
+  getItems() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.ITEMS);
+      if (saved) return JSON.parse(saved);
+      this.saveItems(DEFAULT_ITEMS);
+      return DEFAULT_ITEMS;
+    } catch (e) {
+      return DEFAULT_ITEMS;
+    }
+  },
+
+  saveItems(items) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(items));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
+  exportAllData() {
+    return JSON.stringify({
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      settings: this.getSettings(),
+      invoices: this.getInvoices(),
+      customers: this.getCustomers(),
+      items: this.getItems()
+    }, null, 2);
+  },
+
+  importData(jsonString) {
+    try {
+      const data = JSON.parse(jsonString);
+      if (data.settings) this.saveSettings(data.settings);
+      if (data.invoices && Array.isArray(data.invoices)) this.saveInvoices(data.invoices);
+      if (data.customers && Array.isArray(data.customers)) this.saveCustomers(data.customers);
+      if (data.items && Array.isArray(data.items)) this.saveItems(data.items);
+      return { success: true, count: data.invoices ? data.invoices.length : 0 };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+};
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { StorageManager, DEFAULT_SETTINGS, DEFAULT_INVOICE_SAMPLE };
+}
