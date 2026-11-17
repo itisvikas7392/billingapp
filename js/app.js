@@ -106,9 +106,6 @@
     btnTestSheet: document.getElementById('btn-test-sheet'),
     btnSyncToSheet: document.getElementById('btn-sync-to-sheet'),
     btnFetchFromSheet: document.getElementById('btn-fetch-from-sheet'),
-    setFirebaseConfig: document.getElementById('set-firebase-config'),
-    btnSaveFirebaseConfig: document.getElementById('btn-save-firebase-config'),
-    btnSyncToFirebase: document.getElementById('btn-sync-to-firebase'),
     sheetSyncStatus: document.getElementById('sheet-sync-status'),
     sheetSyncText: document.getElementById('sheet-sync-text'),
 
@@ -135,12 +132,14 @@
     renderCatalogList();
     updateInvoicesCount();
 
-    // Start Firebase Real-time Listener if configured
-    if (window.FirebaseSync && FirebaseSync.isConfigured()) {
-      FirebaseSync.startRealtimeListener((mergedInvoices) => {
-        renderInvoicesList();
-        updateQuickInvoiceSelector();
-        updateInvoicesCount();
+    // Background fetch from Google Sheets if configured
+    if (window.GoogleSheetSync && GoogleSheetSync.isEnabled()) {
+      GoogleSheetSync.fetchInvoices().then(res => {
+        if (res && res.success) {
+          renderInvoicesList();
+          updateQuickInvoiceSelector();
+          updateInvoicesCount();
+        }
       });
     }
 
@@ -281,14 +280,6 @@
     }
     if (elements.btnFetchFromSheet) {
       elements.btnFetchFromSheet.addEventListener('click', handleFetchFromGoogleSheet);
-    }
-
-    // Firebase Sync Events
-    if (elements.btnSaveFirebaseConfig) {
-      elements.btnSaveFirebaseConfig.addEventListener('click', handleSaveFirebaseConfig);
-    }
-    if (elements.btnSyncToFirebase) {
-      elements.btnSyncToFirebase.addEventListener('click', handleSyncAllToFirebase);
     }
 
     // Keyboard Shortcuts (Ctrl+P, Ctrl+S)
@@ -620,15 +611,6 @@
       GoogleSheetSync.saveInvoice(currentInvoice).then(res => {
         if (res && res.success) {
           console.log('Synced invoice to Google Sheet:', currentInvoice.invoiceNumber);
-        }
-      });
-    }
-
-    // Async sync to Firebase Firestore if configured
-    if (window.FirebaseSync && FirebaseSync.isConfigured()) {
-      FirebaseSync.saveInvoice(currentInvoice).then(res => {
-        if (res && res.success) {
-          console.log('Synced invoice to Firebase Firestore:', currentInvoice.invoiceNumber);
         }
       });
     }
@@ -1110,9 +1092,6 @@
     if (elements.setSheetUrl) {
       elements.setSheetUrl.value = settings.googleSheetUrl || '';
     }
-    if (elements.setFirebaseConfig && settings.firebaseConfig) {
-      elements.setFirebaseConfig.value = JSON.stringify(settings.firebaseConfig, null, 2);
-    }
 
     elements.headerBrandName.textContent = settings.businessName || 'Vikas Billing';
     updateSheetSyncBadge();
@@ -1120,77 +1099,21 @@
 
   function updateSheetSyncBadge() {
     if (!elements.sheetSyncStatus || !elements.sheetSyncText) return;
-    const isFirebase = window.FirebaseSync && FirebaseSync.isConfigured();
     const isSheet = window.GoogleSheetSync && GoogleSheetSync.isEnabled();
     const dot = elements.sheetSyncStatus.querySelector('.status-dot');
 
-    if (isFirebase) {
-      elements.sheetSyncStatus.style.background = '#ffedd5';
-      elements.sheetSyncStatus.style.color = '#c2410c';
-      elements.sheetSyncStatus.style.borderColor = '#fdba74';
-      if (dot) dot.style.background = '#ea580c';
-      elements.sheetSyncText.textContent = '🔥 Firebase Real-Time';
-    } else if (isSheet) {
+    if (isSheet) {
       elements.sheetSyncStatus.style.background = '#dcfce7';
       elements.sheetSyncStatus.style.color = '#15803d';
       elements.sheetSyncStatus.style.borderColor = '#86efac';
       if (dot) dot.style.background = '#16a34a';
-      elements.sheetSyncText.textContent = '📊 Google Sheet Synced';
+      elements.sheetSyncText.textContent = '🟢 Google Sheet Connected';
     } else {
       elements.sheetSyncStatus.style.background = '#f8fafc';
       elements.sheetSyncStatus.style.color = '#64748b';
       elements.sheetSyncStatus.style.borderColor = '#cbd5e1';
       if (dot) dot.style.background = '#94a3b8';
       elements.sheetSyncText.textContent = '💾 LocalStorage Mode';
-    }
-  }
-
-  async function handleSaveFirebaseConfig() {
-    const raw = elements.setFirebaseConfig.value.trim();
-    if (!raw) {
-      alert('Please paste your Firebase Config JSON object.');
-      return;
-    }
-
-    let parsed = null;
-    try {
-      parsed = JSON.parse(raw);
-    } catch (e) {
-      alert('Invalid JSON! Please ensure your Firebase Config is formatted as valid JSON.\nExample:\n{\n  "apiKey": "AIzaSy...",\n  "projectId": "my-project-123"\n}');
-      return;
-    }
-
-    if (!parsed.apiKey || !parsed.projectId) {
-      alert('Missing required fields: apiKey and projectId are mandatory.');
-      return;
-    }
-
-    const ok = FirebaseSync.setFirebaseConfig(parsed);
-    if (ok) {
-      updateSheetSyncBadge();
-      FirebaseSync.startRealtimeListener((merged) => {
-        renderInvoicesList();
-        updateQuickInvoiceSelector();
-        updateInvoicesCount();
-      });
-      alert('🔥 Firebase Connected Successfully!\nReal-time bidirectional synchronization is now active.');
-    } else {
-      alert('Failed to initialize Firebase with the provided config. Please check credentials.');
-    }
-  }
-
-  async function handleSyncAllToFirebase() {
-    if (!FirebaseSync.isConfigured()) {
-      alert('Please connect Firebase first by pasting your Firebase Config above.');
-      return;
-    }
-
-    showToast('Uploading all bills to Firebase Firestore...');
-    const res = await FirebaseSync.syncAllLocalToFirebase();
-    if (res && res.success) {
-      showToast(`Uploaded ${res.count} invoices to Firebase Firestore!`);
-    } else {
-      alert('Firebase upload failed: ' + (res.error || 'Check internet connection and security rules.'));
     }
   }
 

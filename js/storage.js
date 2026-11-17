@@ -32,15 +32,7 @@ const DEFAULT_SETTINGS = {
   showUpiQr: true,
   invoiceTitle: 'TAX INVOICE',
   footerTagline: 'Crafted with ease using Vikas Billing | Fast & Professional',
-  googleSheetUrl: '',
-  firebaseConfig: {
-    projectId: "new-project-96625",
-    appId: "1:688491258105:web:7f5b67c3612cb2f15b8228",
-    storageBucket: "new-project-96625.firebasestorage.app",
-    apiKey: "AIzaSyCUdqDeoHlzObEn1AiKbJW5mLIz106k5PI",
-    authDomain: "new-project-96625.firebaseapp.com",
-    messagingSenderId: "688491258105"
-  }
+  googleSheetUrl: ''
 };
 
 const DEFAULT_ITEMS = [
