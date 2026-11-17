@@ -175,6 +175,78 @@
       "priority": 11,
       "passes": true,
       "notes": "Implemented in js/app.js, js/google-sheet.js, and index.html"
+    },
+    {
+      "id": "US-012",
+      "title": "Integrate Google Sheet getNextNumber API for server-authoritative sequential numbering",
+      "description": "As a merchant, I want the client to query Google Sheet for the authoritative next invoice number so that multiple tabs or devices never collide or create duplicate bill numbers.",
+      "acceptanceCriteria": [
+        "Add getNextInvoiceNumber() in js/google-sheet.js that requests ?action=getNextNumber from Apps Script Web App",
+        "Fall back gracefully to StorageManager.computeNextInvoiceNumber() when offline",
+        "Return standard 6-digit zero-padded invoice number (e.g. INV-000156)",
+        "Typecheck passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Auto-create ready-to-bill fresh draft with next sequential number on startup",
+      "description": "As a shopkeeper, when opening the website, I want a fresh blank invoice ready with the next auto-incremented number so I can immediately bill the next customer without overwriting past bills.",
+      "acceptanceCriteria": [
+        "On initial launch after loading Google Sheet records, auto-initialize a fresh draft with the next sequential number",
+        "Preserve past completed bills (INV-000155) in the quick selector dropdown and history tab",
+        "Show badge indicator 'INV-000156 (New Bill Ready)'",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Automate sequence advancement on Save & Next and Print workflows",
+      "description": "As a user, when I finish and print or save an invoice, I want the system to save it to Google Sheet and automatically advance the editor to the next sequential invoice number.",
+      "acceptanceCriteria": [
+        "Clicking 'Save & Next (+1)' saves current bill to Google Sheet and immediately loads the next sequential invoice number",
+        "Add keyboard shortcut Ctrl+Enter to trigger Save & Next",
+        "Provide setting toggle 'Auto-advance to next bill after Print / PDF export'",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "Saved invoice overwrite protection and Save as New Bill (+1) action",
+      "description": "As a user, when reviewing a previously saved invoice, I want visual protection against accidental overwrites with an easy option to clone as a new sequential bill.",
+      "acceptanceCriteria": [
+        "Display clear badge '🔒 Saved Bill: INV-000155 (Viewing Past Record)' when a saved invoice is loaded",
+        "Add 'Save as New Bill (+1)' button that clones customer and line items to the next sequential number instead of modifying the past bill",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "Settings sequence synchronizer and custom invoice prefix support",
+      "description": "As an admin, I want to view, verify, and resynchronize the next invoice sequence number directly from Google Sheet in the Settings tab.",
+      "acceptanceCriteria": [
+        "Display live Next Invoice Number in Settings tab with 'Re-sync Sequence from Google Sheet' button",
+        "Allow customizable invoice prefix (default 'INV-') preserved across all new invoices",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": ""
     }
   ]
 }
