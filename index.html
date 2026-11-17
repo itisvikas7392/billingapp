@@ -75,6 +75,25 @@
         <!-- LEFT PANE: INVOICE FORM EDITOR -->
         <div class="editor-pane no-print">
 
+          <!-- Quick Selector for Past Invoices -->
+          <div class="quick-invoice-box">
+            <div class="quick-invoice-box-header">
+              <label for="select-past-invoice">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                Previous Invoices (पुराने बिल देखें / लोड करें):
+              </label>
+              <span id="editor-active-mode" class="badge badge-paid">INV-000155 (Saved)</span>
+            </div>
+            <div class="quick-invoice-controls">
+              <select id="select-past-invoice" class="form-control" title="Choose any previously saved invoice">
+                <!-- Dynamically populated with all old invoices -->
+              </select>
+              <button class="btn btn-primary btn-sm" id="btn-quick-new-inv" type="button" title="Start brand new invoice with auto-incremented invoice number">
+                + New Bill
+              </button>
+            </div>
+          </div>
+
           <!-- Section: Invoice Header Info -->
           <div class="form-section">
             <div class="form-section-title">
@@ -276,17 +295,25 @@
           </div>
 
           <!-- Bottom Action Buttons in Editor -->
-          <div style="display:flex; gap:0.75rem; padding-bottom: 2rem;">
-            <button class="btn btn-primary" id="btn-save-invoice" style="flex:1;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-              Save Invoice
-            </button>
-            <button class="btn btn-secondary" id="btn-duplicate-invoice">
-              Duplicate
-            </button>
-            <button class="btn btn-danger btn-sm" id="btn-delete-invoice">
-              Delete
-            </button>
+          <div style="display:flex; flex-direction:column; gap:0.6rem; padding-bottom: 2rem;">
+            <div style="display:flex; gap:0.75rem;">
+              <button class="btn btn-primary" id="btn-save-invoice" style="flex:1;" title="Save changes to this invoice">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                Save Invoice
+              </button>
+              <button class="btn btn-success" id="btn-save-and-next" style="flex:1.2;" title="Save this invoice and automatically advance to next invoice number">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                Save &amp; Next Invoice (+1)
+              </button>
+            </div>
+            <div style="display:flex; gap:0.75rem;">
+              <button class="btn btn-secondary btn-sm" id="btn-duplicate-invoice" style="flex:1;">
+                Duplicate Copy
+              </button>
+              <button class="btn btn-danger btn-sm" id="btn-delete-invoice">
+                Delete
+              </button>
+            </div>
           </div>
 
         </div>
@@ -329,13 +356,43 @@
       <div class="content-page">
         <div class="page-header-row">
           <div>
-            <h2 class="page-title">Invoice History</h2>
-            <p style="color:var(--text-muted); font-size:0.88rem;">All created tax invoices stored locally in your browser.</p>
+            <h2 class="page-title">Invoice History &amp; Records (पुराने बिल)</h2>
+            <p style="color:var(--text-muted); font-size:0.88rem;">Search, view, reprint, or export any previous tax invoice stored in your browser.</p>
           </div>
           <div style="display:flex; gap:0.5rem;">
-            <input type="text" id="search-invoices-input" class="form-control" placeholder="Search by # or customer..." style="width:260px;">
+            <input type="text" id="search-invoices-input" class="form-control" placeholder="Search by #, customer, phone, date..." style="width:280px;">
             <button class="btn btn-primary btn-sm" id="btn-history-new-inv">+ Create Invoice</button>
           </div>
+        </div>
+
+        <!-- Real-time Summary Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Total Invoices</span>
+            <span class="stat-val" id="stat-total-count">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Total Billed</span>
+            <span class="stat-val" id="stat-total-billed">₹0.00</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Total Received</span>
+            <span class="stat-val" id="stat-total-received" style="color:#16a34a;">₹0.00</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Balance Due (बकाया)</span>
+            <span class="stat-val" id="stat-total-due" style="color:#dc2626;">₹0.00</span>
+          </div>
+        </div>
+
+        <!-- Filter Pills Bar -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
+          <div class="filter-pills">
+            <button class="filter-pill active" data-filter="all">All Invoices (<span id="count-filter-all">0</span>)</button>
+            <button class="filter-pill" data-filter="paid">Paid / पूर्ण भुगतान (<span id="count-filter-paid">0</span>)</button>
+            <button class="filter-pill" data-filter="pending">Balance Due / बकाया (<span id="count-filter-pending">0</span>)</button>
+          </div>
+          <span style="font-size:0.8rem; color:var(--text-muted);">Tip: Click 'Edit' or 'Print' to open any past bill instantly</span>
         </div>
 
         <table class="invoices-data-table">

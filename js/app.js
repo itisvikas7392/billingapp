@@ -11,6 +11,7 @@
   let currentInvoice = null;
   let activeTab = 'tab-editor';
   let copyMode = 'original'; // 'original', 'duplicate', 'both'
+  let historyFilterStatus = 'all'; // 'all', 'paid', 'pending'
 
   // DOM Elements cache
   const elements = {
@@ -29,6 +30,9 @@
     selectCopyMode: document.getElementById('select-copy-mode'),
 
     // Editor Form Fields
+    selectPastInvoice: document.getElementById('select-past-invoice'),
+    btnQuickNewInv: document.getElementById('btn-quick-new-inv'),
+    editorActiveMode: document.getElementById('editor-active-mode'),
     invType: document.getElementById('inv-type'),
     invNumber: document.getElementById('inv-number'),
     invDate: document.getElementById('inv-date'),
@@ -64,6 +68,7 @@
 
     // Editor Actions
     btnSaveInvoice: document.getElementById('btn-save-invoice'),
+    btnSaveAndNext: document.getElementById('btn-save-and-next'),
     btnDuplicateInvoice: document.getElementById('btn-duplicate-invoice'),
     btnDeleteInvoice: document.getElementById('btn-delete-invoice'),
 
@@ -74,6 +79,14 @@
     invoicesHistoryBody: document.getElementById('invoices-history-body'),
     searchInvoicesInput: document.getElementById('search-invoices-input'),
     btnHistoryNewInv: document.getElementById('btn-history-new-inv'),
+    statTotalCount: document.getElementById('stat-total-count'),
+    statTotalBilled: document.getElementById('stat-total-billed'),
+    statTotalReceived: document.getElementById('stat-total-received'),
+    statTotalDue: document.getElementById('stat-total-due'),
+    countFilterAll: document.getElementById('count-filter-all'),
+    countFilterPaid: document.getElementById('count-filter-paid'),
+    countFilterPending: document.getElementById('count-filter-pending'),
+    filterPills: document.querySelectorAll('.filter-pill'),
 
     // Customer Tab
     customersTableBody: document.getElementById('customers-table-body'),
@@ -106,6 +119,7 @@
     currentInvoice = StorageManager.getInvoiceById(activeId) || StorageManager.getInvoices()[0] || createBlankInvoice();
 
     loadInvoiceIntoEditor(currentInvoice);
+    updateQuickInvoiceSelector();
     renderPreview();
     renderInvoicesList();
     renderCustomersList();
@@ -171,11 +185,30 @@
 
     // Buttons
     elements.btnSaveInvoice.addEventListener('click', saveCurrentInvoice);
+    if (elements.btnSaveAndNext) {
+      elements.btnSaveAndNext.addEventListener('click', saveAndCreateNextInvoice);
+    }
     elements.btnNewInvoice.addEventListener('click', startNewInvoice);
+    if (elements.btnQuickNewInv) {
+      elements.btnQuickNewInv.addEventListener('click', startNewInvoice);
+    }
     elements.btnHistoryNewInv.addEventListener('click', () => {
       startNewInvoice();
       switchTab('tab-editor');
     });
+
+    // Quick Invoice Selector (load previous invoices)
+    if (elements.selectPastInvoice) {
+      elements.selectPastInvoice.addEventListener('change', (e) => {
+        const id = e.target.value;
+        const inv = StorageManager.getInvoiceById(id);
+        if (inv) {
+          StorageManager.setActiveInvoiceId(id);
+          loadInvoiceIntoEditor(inv);
+          showToast(`Loaded invoice ${inv.invoiceNumber} (${inv.customer?.name || 'Cash Customer'})`);
+        }
+      });
+    }
 
     elements.btnDuplicateInvoice.addEventListener('click', duplicateCurrentInvoice);
     elements.btnDeleteInvoice.addEventListener('click', deleteCurrentInvoice);
@@ -191,10 +224,22 @@
       renderPreview();
     });
 
-    // History Search
-    elements.searchInvoicesInput.addEventListener('input', (e) => {
-      renderInvoicesList(e.target.value);
-    });
+    // History Search & Filter Pills
+    if (elements.searchInvoicesInput) {
+      elements.searchInvoicesInput.addEventListener('input', (e) => {
+        renderInvoicesList(e.target.value);
+      });
+    }
+
+    if (elements.filterPills) {
+      elements.filterPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          historyFilterStatus = pill.dataset.filter || 'all';
+          elements.filterPills.forEach(p => p.classList.toggle('active', p === pill));
+          renderInvoicesList(elements.searchInvoicesInput ? elements.searchInvoicesInput.value : '');
+        });
+      });
+    }
 
     // Quick Customer Select
     elements.btnSelectCustomer.addEventListener('click', showCustomerQuickSelect);
@@ -246,12 +291,11 @@
    */
   function createBlankInvoice() {
     const today = new Date().toISOString().split('T')[0];
-    const prefix = settings.invoicePrefix || 'INV-';
-    const num = String(settings.nextInvoiceNumber || 101).padStart(6, '0');
+    const nextInfo = StorageManager.computeNextInvoiceNumber();
 
     return {
       id: 'inv-' + Date.now(),
-      invoiceNumber: `${prefix}${num}`,
+      invoiceNumber: nextInfo.formattedInvoiceNumber,
       invoiceType: settings.invoiceTitle || 'TAX INVOICE',
       copyType: 'ORIGINAL',
       date: today,
@@ -316,6 +360,7 @@
     });
 
     recalculateInvoice();
+    updateQuickInvoiceSelector();
   }
 
   /**
@@ -484,6 +529,7 @@
 
   function onEditorInputChange() {
     recalculateInvoice();
+    updateQuickInvoiceSelector();
   }
 
   /**
@@ -528,23 +574,94 @@
       renderCustomersList();
     }
 
+    updateQuickInvoiceSelector();
     updateInvoicesCount();
     showToast(`Invoice ${currentInvoice.invoiceNumber} saved successfully!`);
   }
 
   /**
-   * Start New Blank Invoice
+   * Save Current Invoice and Automatically advance to next sequential invoice number
    */
-  function startNewInvoice() {
-    // Increment counter in settings
-    settings.nextInvoiceNumber = (settings.nextInvoiceNumber || 155) + 1;
+  function saveAndCreateNextInvoice() {
+    recalculateInvoice();
+    StorageManager.saveInvoice(currentInvoice);
+
+    if (currentInvoice.customer && currentInvoice.customer.name) {
+      StorageManager.addCustomerIfNew(currentInvoice.customer);
+      renderCustomersList();
+    }
+
+    const savedNumber = currentInvoice.invoiceNumber;
+
+    // Automatically compute next invoice number
+    const nextInfo = StorageManager.computeNextInvoiceNumber();
+    settings.nextInvoiceNumber = nextInfo.nextNumber + 1;
     StorageManager.saveSettings(settings);
 
     const blank = createBlankInvoice();
     StorageManager.saveInvoice(blank);
     loadInvoiceIntoEditor(blank);
+    updateQuickInvoiceSelector();
+    updateInvoicesCount();
+    showToast(`Invoice ${savedNumber} saved! Next invoice ${blank.invoiceNumber} is ready.`);
+  }
+
+  /**
+   * Start New Blank Invoice with auto-incremented number
+   */
+  function startNewInvoice() {
+    const nextInfo = StorageManager.computeNextInvoiceNumber();
+    settings.nextInvoiceNumber = nextInfo.nextNumber + 1;
+    StorageManager.saveSettings(settings);
+
+    const blank = createBlankInvoice();
+    StorageManager.saveInvoice(blank);
+    loadInvoiceIntoEditor(blank);
+    updateQuickInvoiceSelector();
+    updateInvoicesCount();
     switchTab('tab-editor');
     showToast(`New Invoice ${blank.invoiceNumber} created!`);
+  }
+
+  /**
+   * Populate quick selector dropdown with all previous invoices for 1-click access
+   */
+  function updateQuickInvoiceSelector() {
+    if (!elements.selectPastInvoice) return;
+    const invoices = StorageManager.getInvoices();
+
+    // Sort invoices descending by invoice number
+    const sorted = [...invoices].sort((a, b) => {
+      return (b.invoiceNumber || '').localeCompare(a.invoiceNumber || '', undefined, { numeric: true });
+    });
+
+    elements.selectPastInvoice.innerHTML = sorted.map(inv => {
+      const custName = inv.customer?.name || 'Cash Customer';
+      const amt = InvoiceTemplate.formatCurrency(inv.total);
+      const isCurrent = currentInvoice && inv.id === currentInvoice.id;
+      return `<option value="${inv.id}" ${isCurrent ? 'selected' : ''}>
+        ${InvoiceTemplate.escapeHtml(inv.invoiceNumber)} — ${InvoiceTemplate.escapeHtml(custName)} (₹${amt}) [${InvoiceTemplate.formatDate(inv.date)}]
+      </option>`;
+    }).join('');
+
+    const exists = invoices.some(i => currentInvoice && i.id === currentInvoice.id);
+    if (!exists && currentInvoice) {
+      const opt = document.createElement('option');
+      opt.value = currentInvoice.id;
+      opt.selected = true;
+      opt.textContent = `⚡ ${currentInvoice.invoiceNumber} (New Bill - Draft)`;
+      elements.selectPastInvoice.prepend(opt);
+    }
+
+    if (elements.editorActiveMode && currentInvoice) {
+      if (exists) {
+        elements.editorActiveMode.className = 'badge badge-paid';
+        elements.editorActiveMode.textContent = `${currentInvoice.invoiceNumber} (Saved Bill)`;
+      } else {
+        elements.editorActiveMode.className = 'badge badge-partial';
+        elements.editorActiveMode.textContent = `${currentInvoice.invoiceNumber} (New Draft)`;
+      }
+    }
   }
 
   /**
@@ -628,24 +745,71 @@
   }
 
   /**
-   * Render Invoices History Table
+   * Render Invoices History Table with live filters and financial statistics
    */
   function renderInvoicesList(query = '') {
     const invoices = StorageManager.getInvoices();
     const cleanQ = query.toLowerCase().trim();
 
+    // 1. Calculate overall financial stats across all stored invoices
+    let totalBilled = 0;
+    let totalReceived = 0;
+    let totalDue = 0;
+    let countPaid = 0;
+    let countPending = 0;
+
+    invoices.forEach(inv => {
+      const tot = Number(inv.total) || 0;
+      const paid = Number(inv.paymentMade) || 0;
+      const due = Number(inv.balanceDue) || Math.max(0, tot - paid);
+
+      totalBilled += tot;
+      totalReceived += paid;
+      totalDue += due;
+
+      if (due <= 0.01 && tot > 0) {
+        countPaid++;
+      } else {
+        countPending++;
+      }
+    });
+
+    if (elements.statTotalCount) elements.statTotalCount.textContent = invoices.length;
+    if (elements.statTotalBilled) elements.statTotalBilled.textContent = `₹${InvoiceTemplate.formatCurrency(totalBilled)}`;
+    if (elements.statTotalReceived) elements.statTotalReceived.textContent = `₹${InvoiceTemplate.formatCurrency(totalReceived)}`;
+    if (elements.statTotalDue) elements.statTotalDue.textContent = `₹${InvoiceTemplate.formatCurrency(totalDue)}`;
+
+    if (elements.countFilterAll) elements.countFilterAll.textContent = invoices.length;
+    if (elements.countFilterPaid) elements.countFilterPaid.textContent = countPaid;
+    if (elements.countFilterPending) elements.countFilterPending.textContent = countPending;
+
+    // 2. Filter invoices by status pill and search query
     const filtered = invoices.filter(inv => {
+      const isPaid = (inv.balanceDue <= 0.01 && inv.total > 0) || inv.status === 'paid';
+
+      if (historyFilterStatus === 'paid' && !isPaid) {
+        return false;
+      }
+      if (historyFilterStatus === 'pending' && isPaid) {
+        return false;
+      }
+
       if (!cleanQ) return true;
       const numMatch = (inv.invoiceNumber || '').toLowerCase().includes(cleanQ);
       const custMatch = (inv.customer?.name || '').toLowerCase().includes(cleanQ);
-      return numMatch || custMatch;
+      const phoneMatch = (inv.customer?.phone || '').toLowerCase().includes(cleanQ);
+      const dateMatch = (inv.date || '').toLowerCase().includes(cleanQ);
+      const amtMatch = String(inv.total || '').includes(cleanQ);
+
+      return numMatch || custMatch || phoneMatch || dateMatch || amtMatch;
     });
 
     if (filtered.length === 0) {
       elements.invoicesHistoryBody.innerHTML = `
         <tr>
-          <td colspan="8" style="text-align:center; padding:2rem; color:var(--text-muted);">
-            No invoices found.
+          <td colspan="8" style="text-align:center; padding:2.5rem; color:var(--text-muted);">
+            <div style="font-size:1.1rem; font-weight:600; margin-bottom:0.25rem;">No Invoices Found</div>
+            <div style="font-size:0.85rem;">Try a different search keyword or status filter.</div>
           </td>
         </tr>
       `;
@@ -653,12 +817,15 @@
     }
 
     elements.invoicesHistoryBody.innerHTML = filtered.map(inv => {
-      const status = inv.status || 'unpaid';
+      const status = inv.status || ((inv.balanceDue <= 0.01) ? 'paid' : 'unpaid');
       return `
         <tr>
           <td><strong>${InvoiceTemplate.escapeHtml(inv.invoiceNumber)}</strong></td>
           <td>${InvoiceTemplate.formatDate(inv.date)}</td>
-          <td>${InvoiceTemplate.escapeHtml(inv.customer?.name || 'Cash Customer')}</td>
+          <td>
+            <div style="font-weight:600;">${InvoiceTemplate.escapeHtml(inv.customer?.name || 'Cash Customer')}</div>
+            ${inv.customer?.phone ? `<div style="font-size:0.75rem; color:#64748b;">${InvoiceTemplate.escapeHtml(inv.customer.phone)}</div>` : ''}
+          </td>
           <td>₹${InvoiceTemplate.formatCurrency(inv.total)}</td>
           <td>₹${InvoiceTemplate.formatCurrency(inv.paymentMade)}</td>
           <td style="font-weight:600; color:${inv.balanceDue > 0 ? '#b91c1c' : '#15803d'};">
@@ -666,9 +833,9 @@
           </td>
           <td><span class="badge badge-${status}">${status.toUpperCase()}</span></td>
           <td style="text-align:right;">
-            <button class="btn btn-secondary btn-sm btn-table-open" data-id="${inv.id}">Edit</button>
-            <button class="btn btn-secondary btn-sm btn-table-print" data-id="${inv.id}">Print</button>
-            <button class="btn btn-danger btn-sm btn-table-del" data-id="${inv.id}">×</button>
+            <button class="btn btn-secondary btn-sm btn-table-open" data-id="${inv.id}" title="Open in Editor">Edit</button>
+            <button class="btn btn-secondary btn-sm btn-table-print" data-id="${inv.id}" title="Print Invoice">Print</button>
+            <button class="btn btn-danger btn-sm btn-table-del" data-id="${inv.id}" title="Delete">×</button>
           </td>
         </tr>
       `;

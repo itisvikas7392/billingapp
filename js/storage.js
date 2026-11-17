@@ -186,6 +186,40 @@ const StorageManager = {
     localStorage.setItem(STORAGE_KEYS.ACTIVE_INVOICE_ID, id);
   },
 
+  /**
+   * Automatically computes the next available sequential invoice number.
+   * Scans all saved invoices to find the maximum existing number, preventing duplicates.
+   */
+  computeNextInvoiceNumber(prefix = null) {
+    const settings = this.getSettings();
+    const effectivePrefix = prefix || settings.invoicePrefix || 'INV-';
+    const invoices = this.getInvoices();
+    let maxNum = 155; // default baseline from INV-000155
+
+    if (settings.nextInvoiceNumber && Number(settings.nextInvoiceNumber) > maxNum) {
+      maxNum = Number(settings.nextInvoiceNumber) - 1;
+    }
+
+    invoices.forEach(inv => {
+      if (inv && inv.invoiceNumber) {
+        const matches = inv.invoiceNumber.match(/\d+/g);
+        if (matches && matches.length > 0) {
+          const num = parseInt(matches[matches.length - 1], 10);
+          if (!isNaN(num) && num > maxNum) {
+            maxNum = num;
+          }
+        }
+      }
+    });
+
+    const nextNum = maxNum + 1;
+    const formatted = `${effectivePrefix}${String(nextNum).padStart(6, '0')}`;
+    return {
+      nextNumber: nextNum,
+      formattedInvoiceNumber: formatted
+    };
+  },
+
   getCustomers() {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.CUSTOMERS);

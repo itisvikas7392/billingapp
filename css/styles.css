@@ -252,6 +252,106 @@ body {
   cursor: pointer;
 }
 
+/* Quick Invoice Selector Header in Editor */
+.quick-invoice-box {
+  background: linear-gradient(to right, #eff6ff, #f8fafc);
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quick-invoice-box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.quick-invoice-box-header label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.quick-invoice-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.quick-invoice-controls select {
+  flex: 1;
+  font-weight: 500;
+}
+
+/* History Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-val {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.filter-pills {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.filter-pill {
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid var(--border-light);
+  background: white;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-pill:hover {
+  background: #f1f5f9;
+  color: var(--text-dark);
+}
+
+.filter-pill.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  font-weight: 600;
+}
+
 /* Forms & Panels */
 .form-section {
   border: 1px solid var(--border-light);

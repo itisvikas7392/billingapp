@@ -113,6 +113,36 @@
       "priority": 7,
       "passes": true,
       "notes": "Configured relative paths, workflow, and README.md"
+    },
+    {
+      "id": "US-008",
+      "title": "Implement automated sequential invoice numbering and collision prevention",
+      "description": "As a user, I want the invoice number to automatically advance sequentially whenever I save or start a new invoice without duplicates.",
+      "acceptanceCriteria": [
+        "Create computeNextInvoiceNumber in storage.js to find the highest existing number across all stored invoices and auto-increment by 1",
+        "Add 'Save & Next Invoice (+1)' button that saves the active invoice and creates a fresh invoice with the incremented number",
+        "Add '+ New Bill' button with automatic sequential number assignment",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "Implemented in storage.js and app.js"
+    },
+    {
+      "id": "US-009",
+      "title": "Implement instant past invoice retrieval, quick switcher, and history filters",
+      "description": "As a user, I want to quickly search, switch to, and view or edit any previous invoice directly from the editor or history tab.",
+      "acceptanceCriteria": [
+        "Add quick-invoice-box dropdown directly above the editor for 1-click loading of any past invoice",
+        "Add real-time filter pills: All Invoices, Paid, and Balance Due (Pending)",
+        "Add financial summary stat cards: Total Invoices, Total Billed, Total Received, and Balance Due",
+        "Search bar filters across invoice number, customer name, phone, date, and amount",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "Implemented in index.html, styles.css, and app.js"
     }
   ]
 }
