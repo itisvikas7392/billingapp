@@ -143,6 +143,21 @@
       "priority": 9,
       "passes": true,
       "notes": "Implemented in index.html, styles.css, and app.js"
+    },
+    {
+      "id": "US-010",
+      "title": "Implement Google Sheets & Apps Script Cloud Database Sync",
+      "description": "As a business owner, I want my invoices to sync to Google Sheets via Google Apps Script so that I have a free cloud database accessible from any device or phone.",
+      "acceptanceCriteria": [
+        "Create Google Apps Script backend Code.gs handling doGet and doPost Web App requests",
+        "Create js/google-sheet.js client sync module handling save, fetch, and ping",
+        "Add Google Sheet Web App URL setting and sync actions in Settings tab",
+        "Add Google Sheet connection status badge in app header",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "Implemented in google-apps-script/Code.gs, js/google-sheet.js, and index.html"
     }
   ]
 }

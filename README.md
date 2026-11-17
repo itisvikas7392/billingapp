@@ -100,6 +100,23 @@ Open [http://localhost:8080](http://localhost:8080) in your browser.
 
 ---
 
+## 📊 Google Sheets & Apps Script Cloud Sync (Free Cloud Database)
+
+You can turn any **Google Sheet** into your free cloud backend so invoices auto-sync across multiple computers and phones:
+
+1. Create a new Google Sheet at [sheets.new](https://sheets.new).
+2. Click **Extensions** > **Apps Script**.
+3. Copy and paste the entire code from [`google-apps-script/Code.gs`](file:///c:/Users/geeta/Downloads/billing/google-apps-script/Code.gs) into the script editor.
+4. Click **Deploy** > **New deployment**:
+   - Type: **Web app**
+   - Execute as: **Me**
+   - Who has access: **Anyone**
+5. Click **Deploy**, authorize access, and copy the **Web App URL**.
+6. Open your Billing App, go to **Settings** > **Google Sheets Cloud Database**, paste your URL, and click **Save**.
+7. Now, every invoice you create will automatically save to your Google Sheet in real-time!
+
+---
+
 ## 📁 Project Architecture
 
 ```
@@ -111,10 +128,13 @@ billing/
 │   └── styles.css              # Custom styling & A4 print media queries
 ├── js/
 │   ├── app.js                  # Master application controller & event handlers
+│   ├── google-sheet.js         # Google Apps Script Web App sync client
 │   ├── invoice-template.js     # Exact HTML invoice renderer (Original & Duplicate)
 │   ├── number-to-words.js      # Indian Rupee words conversion (Crores, Lakhs)
 │   ├── qr.js                   # UPI payment QR generator
 │   └── storage.js              # LocalStorage state management
+├── google-apps-script/
+│   └── Code.gs                 # Google Apps Script Web App backend for Google Sheets
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml          # GitHub Pages automated deployment workflow

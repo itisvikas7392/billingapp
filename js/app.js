@@ -102,6 +102,12 @@
     btnExportJson: document.getElementById('btn-export-json'),
     btnImportJsonTrigger: document.getElementById('btn-import-json-trigger'),
     importJsonFile: document.getElementById('import-json-file'),
+    setSheetUrl: document.getElementById('set-sheet-url'),
+    btnTestSheet: document.getElementById('btn-test-sheet'),
+    btnSyncToSheet: document.getElementById('btn-sync-to-sheet'),
+    btnFetchFromSheet: document.getElementById('btn-fetch-from-sheet'),
+    sheetSyncStatus: document.getElementById('sheet-sync-status'),
+    sheetSyncText: document.getElementById('sheet-sync-text'),
 
     // Toast
     toastContainer: document.getElementById('toast-container')
@@ -253,6 +259,17 @@
     elements.btnExportJson.addEventListener('click', handleExportJson);
     elements.btnImportJsonTrigger.addEventListener('click', () => elements.importJsonFile.click());
     elements.importJsonFile.addEventListener('change', handleImportJson);
+
+    // Google Sheets Sync Events
+    if (elements.btnTestSheet) {
+      elements.btnTestSheet.addEventListener('click', handleTestGoogleSheet);
+    }
+    if (elements.btnSyncToSheet) {
+      elements.btnSyncToSheet.addEventListener('click', handleSyncAllToGoogleSheet);
+    }
+    if (elements.btnFetchFromSheet) {
+      elements.btnFetchFromSheet.addEventListener('click', handleFetchFromGoogleSheet);
+    }
 
     // Keyboard Shortcuts (Ctrl+P, Ctrl+S)
     window.addEventListener('keydown', (e) => {
@@ -577,6 +594,15 @@
     updateQuickInvoiceSelector();
     updateInvoicesCount();
     showToast(`Invoice ${currentInvoice.invoiceNumber} saved successfully!`);
+
+    // Async sync to Google Sheet if configured
+    if (window.GoogleSheetSync && GoogleSheetSync.isEnabled()) {
+      GoogleSheetSync.saveInvoice(currentInvoice).then(res => {
+        if (res && res.success) {
+          console.log('Synced invoice to Google Sheet:', currentInvoice.invoiceNumber);
+        }
+      });
+    }
   }
 
   /**
@@ -1052,8 +1078,32 @@
     document.getElementById('set-next-num').value = settings.nextInvoiceNumber || 156;
     document.getElementById('set-notes').value = settings.defaultNotes || 'Thanks for your business.';
     document.getElementById('set-footer-tagline').value = settings.footerTagline || '';
+    if (elements.setSheetUrl) {
+      elements.setSheetUrl.value = settings.googleSheetUrl || '';
+    }
 
     elements.headerBrandName.textContent = settings.businessName || 'Vikas Billing';
+    updateSheetSyncBadge();
+  }
+
+  function updateSheetSyncBadge() {
+    if (!elements.sheetSyncStatus || !elements.sheetSyncText) return;
+    const isConn = window.GoogleSheetSync && GoogleSheetSync.isEnabled();
+    const dot = elements.sheetSyncStatus.querySelector('.status-dot');
+
+    if (isConn) {
+      elements.sheetSyncStatus.style.background = '#dcfce7';
+      elements.sheetSyncStatus.style.color = '#15803d';
+      elements.sheetSyncStatus.style.borderColor = '#86efac';
+      if (dot) dot.style.background = '#16a34a';
+      elements.sheetSyncText.textContent = 'Google Sheet Connected';
+    } else {
+      elements.sheetSyncStatus.style.background = '#f8fafc';
+      elements.sheetSyncStatus.style.color = '#64748b';
+      elements.sheetSyncStatus.style.borderColor = '#cbd5e1';
+      if (dot) dot.style.background = '#94a3b8';
+      elements.sheetSyncText.textContent = 'LocalStorage Mode';
+    }
   }
 
   function handleSaveSettings(e) {
@@ -1076,10 +1126,64 @@
     settings.defaultNotes = document.getElementById('set-notes').value.trim();
     settings.footerTagline = document.getElementById('set-footer-tagline').value.trim();
 
+    if (elements.setSheetUrl) {
+      settings.googleSheetUrl = elements.setSheetUrl.value.trim();
+    }
+
     StorageManager.saveSettings(settings);
     elements.headerBrandName.textContent = settings.businessName;
+    updateSheetSyncBadge();
     renderPreview();
     showToast('Settings saved successfully!');
+  }
+
+  async function handleTestGoogleSheet() {
+    const url = elements.setSheetUrl.value.trim();
+    if (!url) {
+      alert('Please enter your Google Apps Script Web App URL first.');
+      return;
+    }
+    showToast('Testing Google Sheet connection...');
+    const res = await GoogleSheetSync.testConnection(url);
+    if (res && res.success) {
+      settings.googleSheetUrl = url;
+      StorageManager.saveSettings(settings);
+      updateSheetSyncBadge();
+      alert('✅ Connection Successful!\nGoogle Sheet is successfully linked to Vikas Billing.');
+    } else {
+      alert('❌ Connection Failed: ' + (res.error || 'Please check URL and ensure Web App permissions are set to Anyone.'));
+    }
+  }
+
+  async function handleSyncAllToGoogleSheet() {
+    if (!GoogleSheetSync.isEnabled()) {
+      alert('Please save a valid Google Apps Script Web App URL first.');
+      return;
+    }
+    showToast('Uploading all bills to Google Sheet...');
+    const res = await GoogleSheetSync.syncAllLocalToSheet();
+    if (res && res.success) {
+      showToast(`Successfully synced ${res.count} invoices to Google Sheet!`);
+    } else {
+      alert('Sync failed: ' + (res.error || 'Check internet connection'));
+    }
+  }
+
+  async function handleFetchFromGoogleSheet() {
+    if (!GoogleSheetSync.isEnabled()) {
+      alert('Please save a valid Google Apps Script Web App URL first.');
+      return;
+    }
+    showToast('Fetching latest bills from Google Sheet...');
+    const res = await GoogleSheetSync.fetchInvoices();
+    if (res && res.success) {
+      renderInvoicesList();
+      updateQuickInvoiceSelector();
+      updateInvoicesCount();
+      showToast(`Fetched & merged ${res.count} invoices from Google Sheet!`);
+    } else {
+      alert('Fetch failed: ' + (res.error || 'Could not fetch invoices'));
+    }
   }
 
   function handleExportJson() {

@@ -20,6 +20,10 @@
         <h1 id="header-brand-name">Vikas Billing</h1>
         <p>Tax Invoice & Invoicing Suite</p>
       </div>
+      <span id="sheet-sync-status" class="badge" style="background:#f8fafc; color:#64748b; font-size:0.75rem; display:inline-flex; align-items:center; gap:0.4rem; padding:0.25rem 0.6rem; border:1px solid #cbd5e1; margin-left:0.5rem;" title="Google Sheets cloud sync status">
+        <span class="status-dot" style="width:7px; height:7px; border-radius:50%; background:#94a3b8; display:inline-block;"></span>
+        <span id="sheet-sync-text">LocalStorage Mode</span>
+      </span>
     </div>
 
     <!-- Navigation Tabs -->
@@ -585,6 +589,29 @@
           </div>
         </form>
 
+        <!-- Google Sheets & Apps Script Backend Integration -->
+        <div class="form-section" style="margin-top:1.5rem; border:1px solid #93c5fd; background:linear-gradient(to bottom, #eff6ff, #ffffff);">
+          <div class="form-section-title" style="color:#1e3a8a;">
+            <span>📊 Google Sheets Cloud Database (Apps Script)</span>
+            <span class="badge badge-paid">Free Cloud Sync</span>
+          </div>
+          <p style="font-size:0.85rem; color:#334155; margin-bottom:0.75rem;">
+            Google Sheet को अपना मुफ़्त क्लाउड डेटाबेस बनाएं! Apps Script Web App URL यहाँ पेस्ट करें जिससे हर बिल रियल-टाइम में Google Sheet में सेव होगा और आप किसी भी कंप्यूटर या फोन से अपने बिल एक्सेस कर पाएंगे।
+          </p>
+          <div class="form-group">
+            <label for="set-sheet-url" style="font-weight:600;">Google Apps Script Web App URL</label>
+            <input type="url" id="set-sheet-url" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
+          </div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem;">
+            <button class="btn btn-primary btn-sm" id="btn-test-sheet" type="button">Test Connection (जाँचें)</button>
+            <button class="btn btn-success btn-sm" id="btn-sync-to-sheet" type="button">Upload Local Bills to Sheet</button>
+            <button class="btn btn-secondary btn-sm" id="btn-fetch-from-sheet" type="button">Fetch Bills from Sheet</button>
+          </div>
+          <div style="margin-top:0.75rem; font-size:0.78rem; color:#475569; background:#ffffff; padding:0.6rem; border-radius:6px; border:1px dashed #cbd5e1;">
+            <strong>Setup Guide:</strong> 1. Open Google Sheet (<code>sheets.new</code>) &gt; Extensions &gt; Apps Script. 2. Paste code from <code>google-apps-script/Code.gs</code>. 3. Deploy as Web App (Who has access: Anyone). 4. Paste URL above!
+          </div>
+        </div>
+
         <!-- Backup & Restore Data -->
         <div class="form-section" style="margin-top:1.5rem;">
           <div class="form-section-title">Data Backup & Restore</div>
@@ -615,6 +642,7 @@
   <script src="./js/number-to-words.js"></script>
   <script src="./js/storage.js"></script>
   <script src="./js/qr.js"></script>
+  <script src="./js/google-sheet.js"></script>
   <script src="./js/invoice-template.js"></script>
   <script src="./js/app.js"></script>
 </body>
