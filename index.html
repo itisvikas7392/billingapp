@@ -589,6 +589,25 @@
           </div>
         </form>
 
+        <!-- Firebase Firestore Cloud Database Integration -->
+        <div class="form-section" style="margin-top:1.5rem; border:1px solid #f97316; background:linear-gradient(to bottom, #fff7ed, #ffffff);">
+          <div class="form-section-title" style="color:#c2410c;">
+            <span>🔥 Firebase Firestore (Real-Time Cloud Database)</span>
+            <span class="badge" style="background:#ea580c; color:white;">Real-Time Sync</span>
+          </div>
+          <p style="font-size:0.85rem; color:#431407; margin-bottom:0.75rem;">
+            Google Firebase Firestore से रियल-टाइम सिंक जोड़ें! नीचे अपना Firebase Config (JSON) पेस्ट करें। इसके बाद सभी डिवाइसेज पर बिना रिफ्रेश किए लाइव बिल अपडेट होंगे।
+          </p>
+          <div class="form-group">
+            <label for="set-firebase-config" style="font-weight:600;">Firebase Config (JSON format)</label>
+            <textarea id="set-firebase-config" class="form-control" style="font-family:monospace; font-size:0.8rem; min-height:85px;" placeholder='{ "apiKey": "AIzaSy...", "authDomain": "...", "projectId": "...", "storageBucket": "..." }'></textarea>
+          </div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem;">
+            <button class="btn btn-primary btn-sm" id="btn-save-firebase-config" type="button" style="background:#ea580c; border-color:#ea580c;">Connect Firebase (कनेक्ट करें)</button>
+            <button class="btn btn-secondary btn-sm" id="btn-sync-to-firebase" type="button">Upload All Local Bills to Firebase</button>
+          </div>
+        </div>
+
         <!-- Google Sheets & Apps Script Backend Integration -->
         <div class="form-section" style="margin-top:1.5rem; border:1px solid #93c5fd; background:linear-gradient(to bottom, #eff6ff, #ffffff);">
           <div class="form-section-title" style="color:#1e3a8a;">
@@ -642,6 +661,10 @@
   <script src="./js/number-to-words.js"></script>
   <script src="./js/storage.js"></script>
   <script src="./js/qr.js"></script>
+  <!-- Firebase SDK (v10 compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="./js/firebase-sync.js"></script>
   <script src="./js/google-sheet.js"></script>
   <script src="./js/invoice-template.js"></script>
   <script src="./js/app.js"></script>

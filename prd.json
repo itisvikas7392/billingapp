@@ -158,6 +158,21 @@
       "priority": 10,
       "passes": true,
       "notes": "Implemented in google-apps-script/Code.gs, js/google-sheet.js, and index.html"
+    },
+    {
+      "id": "US-011",
+      "title": "Implement Firebase Firestore Real-Time Cloud Database and Hosting",
+      "description": "As a user, I want real-time bidirectional synchronization with Firebase Firestore so that changes made on any computer or phone are immediately reflected without page refresh.",
+      "acceptanceCriteria": [
+        "Create js/firebase-sync.js using Firebase SDK v10 with onSnapshot real-time listener and offline persistence",
+        "Add Firebase Config JSON editor and connection testing in Settings tab",
+        "Delegate and generate production-grade firestore.rules for data security and validation",
+        "Create firebase.json for 1-command deployment to Firebase Hosting and Firestore",
+        "Typecheck passes"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": "Implemented in js/firebase-sync.js, firebase.json, and index.html"
     }
   ]
 }

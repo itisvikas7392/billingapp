@@ -32,7 +32,8 @@ const DEFAULT_SETTINGS = {
   showUpiQr: true,
   invoiceTitle: 'TAX INVOICE',
   footerTagline: 'Crafted with ease using Vikas Billing | Fast & Professional',
-  googleSheetUrl: ''
+  googleSheetUrl: '',
+  firebaseConfig: null
 };
 
 const DEFAULT_ITEMS = [

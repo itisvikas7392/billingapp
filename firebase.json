@@ -1,0 +1,18 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "firestore.rules",
+      ".github/**",
+      "google-apps-script/**",
+      "README.md",
+      "prd.json",
+      "INV-000155.pdf",
+      "**/.*"
+    ]
+  }
+}
