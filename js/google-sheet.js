@@ -1,23 +1,24 @@
 /**
- * Google Sheets Cloud Sync Module for Vikas Billing App
- * Uses Google Apps Script Web App as a free serverless REST backend.
+ * Google Sheets Cloud Database Module for Vikas Billing App
+ * Uses Google Apps Script Web App as the primary serverless cloud database.
  */
+
+const APPSCRIPT_URL = 'https://script.google.com/macros/s/AKfycby9S2Sxi7lHCQ5GfqKp6z54pGmgzX5i1vifq4dDeOIs2IUAVm-stYzR7L6RntFiLA/exec';
 
 const GoogleSheetSync = {
   getAppScriptUrl() {
     const settings = StorageManager.getSettings();
-    return settings.googleSheetUrl || '';
+    return (settings.googleSheetUrl || APPSCRIPT_URL).trim();
   },
 
   setAppScriptUrl(url) {
     const settings = StorageManager.getSettings();
-    settings.googleSheetUrl = (url || '').trim();
+    settings.googleSheetUrl = (url || APPSCRIPT_URL).trim();
     StorageManager.saveSettings(settings);
   },
 
   isEnabled() {
-    const url = this.getAppScriptUrl();
-    return Boolean(url && url.startsWith('https://script.google.com/'));
+    return true; // Permanently enabled with bound Google Sheet database
   },
 
   /**

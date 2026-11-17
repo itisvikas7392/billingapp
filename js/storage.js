@@ -108,7 +108,12 @@ const StorageManager = {
   getSettings() {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-      return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : { ...DEFAULT_SETTINGS };
+      const parsed = saved ? JSON.parse(saved) : {};
+      const res = { ...DEFAULT_SETTINGS, ...parsed };
+      if (!res.googleSheetUrl) {
+        res.googleSheetUrl = DEFAULT_SETTINGS.googleSheetUrl;
+      }
+      return res;
     } catch (e) {
       console.warn('Storage read failed:', e);
       return { ...DEFAULT_SETTINGS };

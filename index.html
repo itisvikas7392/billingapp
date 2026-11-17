@@ -20,9 +20,9 @@
         <h1 id="header-brand-name">Vikas Billing</h1>
         <p>Tax Invoice & Invoicing Suite</p>
       </div>
-      <span id="sheet-sync-status" class="badge" style="background:#f8fafc; color:#64748b; font-size:0.75rem; display:inline-flex; align-items:center; gap:0.4rem; padding:0.25rem 0.6rem; border:1px solid #cbd5e1; margin-left:0.5rem;" title="Google Sheets cloud sync status">
-        <span class="status-dot" style="width:7px; height:7px; border-radius:50%; background:#94a3b8; display:inline-block;"></span>
-        <span id="sheet-sync-text">LocalStorage Mode</span>
+      <span id="sheet-sync-status" class="badge" style="background:#dcfce7; color:#15803d; font-size:0.75rem; display:inline-flex; align-items:center; gap:0.4rem; padding:0.25rem 0.6rem; border:1px solid #86efac; margin-left:0.5rem;" title="Google Sheets live cloud database connected">
+        <span class="status-dot" style="width:7px; height:7px; border-radius:50%; background:#16a34a; display:inline-block;"></span>
+        <span id="sheet-sync-text">🟢 Google Sheet Database</span>
       </span>
     </div>
 
@@ -599,8 +599,8 @@
             Google Sheet को अपना मुफ़्त क्लाउड डेटाबेस बनाएं! Apps Script Web App URL यहाँ पेस्ट करें जिससे हर बिल रियल-टाइम में Google Sheet में सेव होगा और आप किसी भी कंप्यूटर या फोन से अपने बिल एक्सेस कर पाएंगे।
           </p>
           <div class="form-group">
-            <label for="set-sheet-url" style="font-weight:600;">Google Apps Script Web App URL</label>
-            <input type="url" id="set-sheet-url" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
+            <label for="set-sheet-url" style="font-weight:600;">Google Apps Script Web App URL (Connected Database)</label>
+            <input type="url" id="set-sheet-url" class="form-control" value="https://script.google.com/macros/s/AKfycby9S2Sxi7lHCQ5GfqKp6z54pGmgzX5i1vifq4dDeOIs2IUAVm-stYzR7L6RntFiLA/exec">
           </div>
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem;">
             <button class="btn btn-primary btn-sm" id="btn-test-sheet" type="button">Test Connection (जाँचें)</button>

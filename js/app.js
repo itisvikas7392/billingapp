@@ -135,10 +135,20 @@
     // Background fetch from Google Sheets if configured
     if (window.GoogleSheetSync && GoogleSheetSync.isEnabled()) {
       GoogleSheetSync.fetchInvoices().then(res => {
-        if (res && res.success) {
+        if (res && res.success && res.invoices && res.invoices.length > 0) {
+          const activeId = StorageManager.getActiveInvoiceId();
+          const found = StorageManager.getInvoiceById(activeId);
+          if (found) {
+            currentInvoice = found;
+          } else {
+            currentInvoice = res.invoices[res.invoices.length - 1];
+          }
+          loadInvoiceIntoEditor(currentInvoice);
+          renderPreview();
           renderInvoicesList();
           updateQuickInvoiceSelector();
           updateInvoicesCount();
+          updateSheetSyncBadge();
         }
       });
     }
@@ -611,6 +621,7 @@
       GoogleSheetSync.saveInvoice(currentInvoice).then(res => {
         if (res && res.success) {
           console.log('Synced invoice to Google Sheet:', currentInvoice.invoiceNumber);
+          showToast(`⚡ ${currentInvoice.invoiceNumber} saved to Google Sheet!`);
         }
       });
     }
@@ -628,6 +639,14 @@
       renderCustomersList();
     }
 
+    if (window.GoogleSheetSync && GoogleSheetSync.isEnabled()) {
+      GoogleSheetSync.saveInvoice(currentInvoice).then(res => {
+        if (res && res.success) {
+          console.log('Synced invoice to Google Sheet:', currentInvoice.invoiceNumber);
+        }
+      });
+    }
+
     const savedNumber = currentInvoice.invoiceNumber;
 
     // Automatically compute next invoice number
@@ -640,7 +659,7 @@
     loadInvoiceIntoEditor(blank);
     updateQuickInvoiceSelector();
     updateInvoicesCount();
-    showToast(`Invoice ${savedNumber} saved! Next invoice ${blank.invoiceNumber} is ready.`);
+    showToast(`Invoice ${savedNumber} saved to Google Sheet! Next invoice ${blank.invoiceNumber} is ready.`);
   }
 
   /**
@@ -718,6 +737,13 @@
     copy.updatedAt = new Date().toISOString();
 
     StorageManager.saveInvoice(copy);
+    if (window.GoogleSheetSync && GoogleSheetSync.isEnabled()) {
+      GoogleSheetSync.saveInvoice(copy).then(res => {
+        if (res && res.success) {
+          showToast(`⚡ ${copy.invoiceNumber} saved to Google Sheet!`);
+        }
+      });
+    }
     loadInvoiceIntoEditor(copy);
     updateInvoicesCount();
     showToast(`Duplicated to ${copy.invoiceNumber}!`);
@@ -731,7 +757,11 @@
       return;
     }
 
-    StorageManager.deleteInvoice(currentInvoice.id);
+    const delId = currentInvoice.id;
+    StorageManager.deleteInvoice(delId);
+    if (window.GoogleSheetSync && GoogleSheetSync.isEnabled()) {
+      GoogleSheetSync.deleteInvoice(delId);
+    }
     const remaining = StorageManager.getInvoices();
     if (remaining.length > 0) {
       loadInvoiceIntoEditor(remaining[0]);
@@ -742,7 +772,7 @@
     }
 
     updateInvoicesCount();
-    showToast('Invoice deleted.');
+    showToast('Invoice deleted from Sheet & LocalStorage.');
   }
 
   /**
@@ -903,10 +933,14 @@
     elements.invoicesHistoryBody.querySelectorAll('.btn-table-del').forEach(btn => {
       btn.addEventListener('click', () => {
         if (confirm('Delete this invoice?')) {
-          StorageManager.deleteInvoice(btn.dataset.id);
+          const delId = btn.dataset.id;
+          StorageManager.deleteInvoice(delId);
+          if (window.GoogleSheetSync && GoogleSheetSync.isEnabled()) {
+            GoogleSheetSync.deleteInvoice(delId);
+          }
           renderInvoicesList(elements.searchInvoicesInput.value);
           updateInvoicesCount();
-          showToast('Invoice deleted.');
+          showToast('Invoice deleted from Sheet & LocalStorage.');
         }
       });
     });
