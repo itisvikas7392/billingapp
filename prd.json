@@ -158,6 +158,23 @@
       "priority": 10,
       "passes": true,
       "notes": "Implemented in google-apps-script/Code.gs, js/google-sheet.js, and index.html"
+    },
+    {
+      "id": "US-011",
+      "title": "Auto-fetch Google Sheet on startup and eliminate LocalStorage options from UI",
+      "description": "As a user, I want the web app to automatically fetch all invoices directly from Google Sheet on startup and eliminate all LocalStorage mode options so Google Sheet is the sole primary cloud database.",
+      "acceptanceCriteria": [
+        "Web app automatically triggers autoFetchFromGoogleSheet() on initial page load",
+        "Header badge displays dynamic status: Loading -> Google Sheet Database (N Bills)",
+        "Latest invoice from Google Sheet is automatically loaded into the active editor and preview",
+        "Customers from sheet invoices are automatically extracted into the customer directory",
+        "Next invoice number is automatically computed from the maximum number in Google Sheet",
+        "Remove all LocalStorage mode badges, options, and upload buttons from the UI",
+        "Typecheck passes"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": "Implemented in js/app.js, js/google-sheet.js, and index.html"
     }
   ]
 }

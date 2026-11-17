@@ -116,11 +116,14 @@
   /**
    * Application Initialization
    */
-  function init() {
+  async function init() {
     loadSettingsIntoUI();
     populateCatalogDropdown();
 
-    // Load active invoice from storage or default sample
+    // Show initial loading state for Google Sheet
+    updateSheetSyncStatus('loading', '🔄 Fetching Google Sheet Database...');
+
+    // Load active invoice from cache or default sample for zero initial lag
     const activeId = StorageManager.getActiveInvoiceId();
     currentInvoice = StorageManager.getInvoiceById(activeId) || StorageManager.getInvoices()[0] || createBlankInvoice();
 
@@ -132,28 +135,72 @@
     renderCatalogList();
     updateInvoicesCount();
 
-    // Background fetch from Google Sheets if configured
-    if (window.GoogleSheetSync && GoogleSheetSync.isEnabled()) {
-      GoogleSheetSync.fetchInvoices().then(res => {
-        if (res && res.success && res.invoices && res.invoices.length > 0) {
-          const activeId = StorageManager.getActiveInvoiceId();
-          const found = StorageManager.getInvoiceById(activeId);
-          if (found) {
-            currentInvoice = found;
-          } else {
-            currentInvoice = res.invoices[res.invoices.length - 1];
-          }
-          loadInvoiceIntoEditor(currentInvoice);
-          renderPreview();
-          renderInvoicesList();
-          updateQuickInvoiceSelector();
-          updateInvoicesCount();
-          updateSheetSyncBadge();
-        }
-      });
+    bindEvents();
+
+    // Automatically fetch live invoices from Google Sheet database on startup
+    await autoFetchFromGoogleSheet();
+  }
+
+  /**
+   * Automatically fetch all invoices from Google Sheet database
+   */
+  async function autoFetchFromGoogleSheet(isManual = false) {
+    if (!window.GoogleSheetSync) return;
+
+    updateSheetSyncStatus('loading', '🔄 Connecting to Google Sheet...');
+    if (isManual) {
+      showToast('Fetching latest bills from Google Sheet...');
     }
 
-    bindEvents();
+    try {
+      const res = await GoogleSheetSync.fetchInvoices();
+      if (res && res.success && Array.isArray(res.invoices)) {
+        const invoices = res.invoices;
+
+        // Auto-extract customers from sheet invoices
+        invoices.forEach(inv => {
+          if (inv.customer && inv.customer.name) {
+            StorageManager.addCustomerIfNew(inv.customer);
+          }
+        });
+
+        // Compute next invoice number based on sheet
+        const nextInfo = StorageManager.computeNextInvoiceNumber();
+        settings.nextInvoiceNumber = nextInfo.nextNumber;
+        StorageManager.saveSettings(settings);
+
+        // Load most recent invoice from Google Sheet if available
+        if (invoices.length > 0) {
+          const sorted = [...invoices].sort((a, b) => {
+            return (b.invoiceNumber || '').localeCompare(a.invoiceNumber || '', undefined, { numeric: true });
+          });
+          currentInvoice = sorted[0];
+          StorageManager.setActiveInvoiceId(currentInvoice.id);
+          loadInvoiceIntoEditor(currentInvoice);
+          renderPreview();
+        }
+
+        renderInvoicesList();
+        updateQuickInvoiceSelector();
+        updateInvoicesCount();
+        renderCustomersList();
+        updateSheetSyncStatus('connected');
+
+        if (isManual) {
+          showToast(`✅ Google Sheet से ${invoices.length} इनवॉइस रिफ्रेश हो गए!`);
+        } else {
+          showToast(`✅ Google Sheet Database Connected (${invoices.length} Bills Loaded)`);
+        }
+      } else {
+        updateSheetSyncStatus('error', '⚠️ Google Sheet Reconnecting...');
+        if (isManual) {
+          alert('Could not fetch from Google Sheet: ' + (res.error || 'Unknown error'));
+        }
+      }
+    } catch (err) {
+      console.warn('Auto fetch error:', err);
+      updateSheetSyncStatus('error', '⚠️ Google Sheet Offline');
+    }
   }
 
   /**
@@ -772,7 +819,7 @@
     }
 
     updateInvoicesCount();
-    showToast('Invoice deleted from Sheet & LocalStorage.');
+    showToast('Invoice deleted from Google Sheet.');
   }
 
   /**
@@ -940,7 +987,7 @@
           }
           renderInvoicesList(elements.searchInvoicesInput.value);
           updateInvoicesCount();
-          showToast('Invoice deleted from Sheet & LocalStorage.');
+          showToast('Invoice deleted from Google Sheet.');
         }
       });
     });
@@ -1131,24 +1178,34 @@
     updateSheetSyncBadge();
   }
 
-  function updateSheetSyncBadge() {
+  function updateSheetSyncStatus(status = 'connected', customText = null) {
     if (!elements.sheetSyncStatus || !elements.sheetSyncText) return;
-    const isSheet = window.GoogleSheetSync && GoogleSheetSync.isEnabled();
     const dot = elements.sheetSyncStatus.querySelector('.status-dot');
+    const invoices = StorageManager.getInvoices();
 
-    if (isSheet) {
+    if (status === 'loading') {
+      elements.sheetSyncStatus.style.background = '#fef3c7';
+      elements.sheetSyncStatus.style.color = '#92400e';
+      elements.sheetSyncStatus.style.borderColor = '#fcd34d';
+      if (dot) dot.style.background = '#d97706';
+      elements.sheetSyncText.textContent = customText || '🔄 Loading Google Sheet...';
+    } else if (status === 'error') {
+      elements.sheetSyncStatus.style.background = '#fee2e2';
+      elements.sheetSyncStatus.style.color = '#b91c1c';
+      elements.sheetSyncStatus.style.borderColor = '#fca5a5';
+      if (dot) dot.style.background = '#ef4444';
+      elements.sheetSyncText.textContent = customText || '⚠️ Google Sheet Disconnected';
+    } else {
       elements.sheetSyncStatus.style.background = '#dcfce7';
       elements.sheetSyncStatus.style.color = '#15803d';
       elements.sheetSyncStatus.style.borderColor = '#86efac';
       if (dot) dot.style.background = '#16a34a';
-      elements.sheetSyncText.textContent = '🟢 Google Sheet Connected';
-    } else {
-      elements.sheetSyncStatus.style.background = '#f8fafc';
-      elements.sheetSyncStatus.style.color = '#64748b';
-      elements.sheetSyncStatus.style.borderColor = '#cbd5e1';
-      if (dot) dot.style.background = '#94a3b8';
-      elements.sheetSyncText.textContent = '💾 LocalStorage Mode';
+      elements.sheetSyncText.textContent = `🟢 Google Sheet Database (${invoices.length} Bills)`;
     }
+  }
+
+  function updateSheetSyncBadge() {
+    updateSheetSyncStatus('connected');
   }
 
   function handleSaveSettings(e) {
@@ -1215,20 +1272,7 @@
   }
 
   async function handleFetchFromGoogleSheet() {
-    if (!GoogleSheetSync.isEnabled()) {
-      alert('Please save a valid Google Apps Script Web App URL first.');
-      return;
-    }
-    showToast('Fetching latest bills from Google Sheet...');
-    const res = await GoogleSheetSync.fetchInvoices();
-    if (res && res.success) {
-      renderInvoicesList();
-      updateQuickInvoiceSelector();
-      updateInvoicesCount();
-      showToast(`Fetched & merged ${res.count} invoices from Google Sheet!`);
-    } else {
-      alert('Fetch failed: ' + (res.error || 'Could not fetch invoices'));
-    }
+    await autoFetchFromGoogleSheet(true);
   }
 
   function handleExportJson() {

@@ -92,7 +92,7 @@ const GoogleSheetSync = {
   },
 
   /**
-   * Fetch all invoices from Google Sheet and merge with LocalStorage
+   * Fetch all invoices from Google Sheet (Primary Master Database)
    */
   async fetchInvoices() {
     if (!this.isEnabled()) return { success: false, error: 'Not enabled' };
@@ -104,18 +104,17 @@ const GoogleSheetSync = {
       const data = await res.json();
 
       if (data && data.success && Array.isArray(data.invoices)) {
-        // Merge with local invoices
-        const localList = StorageManager.getInvoices();
-        const mergedMap = new Map();
-
-        // Put local first
-        localList.forEach(inv => mergedMap.set(inv.id || inv.invoiceNumber, inv));
-        // Overwrite or add from remote
-        data.invoices.forEach(inv => mergedMap.set(inv.id || inv.invoiceNumber, inv));
-
-        const mergedArray = Array.from(mergedMap.values());
-        StorageManager.saveInvoices(mergedArray);
-        return { success: true, count: data.invoices.length, invoices: mergedArray };
+        const sheetInvoices = data.invoices;
+        // Overwrite cache with master sheet invoices
+        if (sheetInvoices.length > 0) {
+          StorageManager.saveInvoices(sheetInvoices);
+          sheetInvoices.forEach(inv => {
+            if (inv.customer && inv.customer.name) {
+              StorageManager.addCustomerIfNew(inv.customer);
+            }
+          });
+        }
+        return { success: true, count: sheetInvoices.length, invoices: sheetInvoices };
       }
 
       return data;

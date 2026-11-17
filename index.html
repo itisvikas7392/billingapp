@@ -20,9 +20,9 @@
         <h1 id="header-brand-name">Vikas Billing</h1>
         <p>Tax Invoice & Invoicing Suite</p>
       </div>
-      <span id="sheet-sync-status" class="badge" style="background:#dcfce7; color:#15803d; font-size:0.75rem; display:inline-flex; align-items:center; gap:0.4rem; padding:0.25rem 0.6rem; border:1px solid #86efac; margin-left:0.5rem;" title="Google Sheets live cloud database connected">
-        <span class="status-dot" style="width:7px; height:7px; border-radius:50%; background:#16a34a; display:inline-block;"></span>
-        <span id="sheet-sync-text">🟢 Google Sheet Database</span>
+      <span id="sheet-sync-status" class="badge" style="background:#fef3c7; color:#92400e; font-size:0.75rem; display:inline-flex; align-items:center; gap:0.4rem; padding:0.25rem 0.6rem; border:1px solid #fcd34d; margin-left:0.5rem;" title="Google Sheets live cloud database">
+        <span class="status-dot" style="width:7px; height:7px; border-radius:50%; background:#d97706; display:inline-block;"></span>
+        <span id="sheet-sync-text">🔄 Loading Google Sheet Database...</span>
       </span>
     </div>
 
@@ -589,26 +589,28 @@
           </div>
         </form>
 
-        <!-- Google Sheets & Apps Script Backend Integration -->
-        <div class="form-section" style="margin-top:1.5rem; border:1px solid #93c5fd; background:linear-gradient(to bottom, #eff6ff, #ffffff);">
-          <div class="form-section-title" style="color:#1e3a8a;">
-            <span>📊 Google Sheets Cloud Database (Apps Script)</span>
-            <span class="badge badge-paid">Free Cloud Sync</span>
+        <!-- Google Sheets Cloud Database Integration -->
+        <div class="form-section" style="margin-top:1.5rem; border:1px solid #86efac; background:linear-gradient(to bottom, #f0fdf4, #ffffff);">
+          <div class="form-section-title" style="color:#166534;">
+            <span>🟢 Google Sheet Live Database</span>
+            <span class="badge badge-paid" style="background:#16a34a;">Cloud Database Active</span>
           </div>
           <p style="font-size:0.85rem; color:#334155; margin-bottom:0.75rem;">
-            Google Sheet को अपना मुफ़्त क्लाउड डेटाबेस बनाएं! Apps Script Web App URL यहाँ पेस्ट करें जिससे हर बिल रियल-टाइम में Google Sheet में सेव होगा और आप किसी भी कंप्यूटर या फोन से अपने बिल एक्सेस कर पाएंगे।
+            यह ऐप Google Sheets को अपना मुख्य डेटाबेस उपयोग करता है। वेबसाइट खुलते ही सारे इनवॉइस Google Sheet से स्वतः लोड हो जाते हैं और हर बिल सीधे Google Sheet में सुरक्षित सेव होता है।
           </p>
           <div class="form-group">
-            <label for="set-sheet-url" style="font-weight:600;">Google Apps Script Web App URL (Connected Database)</label>
-            <input type="url" id="set-sheet-url" class="form-control" value="https://script.google.com/macros/s/AKfycby9S2Sxi7lHCQ5GfqKp6z54pGmgzX5i1vifq4dDeOIs2IUAVm-stYzR7L6RntFiLA/exec">
+            <label for="set-sheet-url" style="font-weight:600;">Google Apps Script Web App Endpoint</label>
+            <input type="url" id="set-sheet-url" class="form-control" value="https://script.google.com/macros/s/AKfycby9S2Sxi7lHCQ5GfqKp6z54pGmgzX5i1vifq4dDeOIs2IUAVm-stYzR7L6RntFiLA/exec" readonly style="background:#f8fafc; font-family:monospace; font-size:0.8rem; cursor:not-allowed;">
           </div>
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem;">
-            <button class="btn btn-primary btn-sm" id="btn-test-sheet" type="button">Test Connection (जाँचें)</button>
-            <button class="btn btn-success btn-sm" id="btn-sync-to-sheet" type="button">Upload Local Bills to Sheet</button>
-            <button class="btn btn-secondary btn-sm" id="btn-fetch-from-sheet" type="button">Fetch Bills from Sheet</button>
+            <button class="btn btn-primary btn-sm" id="btn-fetch-from-sheet" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; vertical-align:middle;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+              Refresh Data from Google Sheet
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btn-test-sheet" type="button">Test Connection (जाँचें)</button>
           </div>
-          <div style="margin-top:0.75rem; font-size:0.78rem; color:#475569; background:#ffffff; padding:0.6rem; border-radius:6px; border:1px dashed #cbd5e1;">
-            <strong>Setup Guide:</strong> 1. Open Google Sheet (<code>sheets.new</code>) &gt; Extensions &gt; Apps Script. 2. Paste code from <code>google-apps-script/Code.gs</code>. 3. Deploy as Web App (Who has access: Anyone). 4. Paste URL above!
+          <div style="margin-top:0.75rem; font-size:0.8rem; color:#166534; background:#dcfce7; padding:0.6rem 0.8rem; border-radius:6px; border:1px solid #bbf7d0;">
+            ✅ <strong>Auto Fetch Enabled:</strong> LocalStorage का कोई विकल्प नहीं है — Google Sheet ही आपका मुख्य लाइव डेटाबेस है।
           </div>
         </div>
 
