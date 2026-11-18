@@ -668,30 +668,65 @@
   }
 
   /**
-   * Save Current Invoice
+   * Save Current Invoice (Synchronizes with Google Sheet & LocalStorage)
    */
-  function saveCurrentInvoice() {
+  async function saveCurrentInvoice() {
     recalculateInvoice();
-    StorageManager.saveInvoice(currentInvoice);
+
+    // Preserve original button UI
+    const originalSaveHtml = elements.btnSaveInvoice.innerHTML;
+    elements.btnSaveInvoice.disabled = true;
+    elements.btnSaveInvoice.innerHTML = `
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M12 2a10 10 0 0 1 10 10"></path>
+      </svg>
+      Saving to Sheet...
+    `;
+
+    // Deep clone invoice to guarantee stability
+    const invoiceToSave = JSON.parse(JSON.stringify(currentInvoice));
+    StorageManager.saveInvoice(invoiceToSave);
 
     // Auto-save customer to customer list if new
-    if (currentInvoice.customer && currentInvoice.customer.name) {
-      StorageManager.addCustomerIfNew(currentInvoice.customer);
+    if (invoiceToSave.customer && invoiceToSave.customer.name) {
+      StorageManager.addCustomerIfNew(invoiceToSave.customer);
       renderCustomersList();
     }
 
     updateQuickInvoiceSelector();
     updateInvoicesCount();
-    showToast(`Invoice ${currentInvoice.invoiceNumber} saved successfully!`);
 
-    // Async sync to Google Sheet if configured
-    if (window.GoogleSheetSync && GoogleSheetSync.isEnabled()) {
-      GoogleSheetSync.saveInvoice(currentInvoice).then(res => {
+    try {
+      if (window.GoogleSheetSync && GoogleSheetSync.isEnabled()) {
+        updateSheetSyncStatus('loading', `⏳ Saving ${invoiceToSave.invoiceNumber} to Google Sheet...`);
+        const res = await GoogleSheetSync.saveInvoice(invoiceToSave);
+
         if (res && res.success) {
-          console.log('Synced invoice to Google Sheet:', currentInvoice.invoiceNumber);
-          showToast(`⚡ ${currentInvoice.invoiceNumber} saved to Google Sheet!`);
+          updateSheetSyncStatus('connected');
+          showToast(`⚡ ${invoiceToSave.invoiceNumber} Google Sheet में सफलतापूर्वक सुरक्षित हो गया!`);
+          renderInvoicesList();
+          updateQuickInvoiceSelector();
+          updateInvoicesCount();
+          return res;
+        } else {
+          updateSheetSyncStatus('error', '⚠️ Sync Issue');
+          const errMsg = (res && res.error) ? res.error : 'Network error or timeout';
+          showToast(`❌ Google Sheet Save Failed: ${errMsg}`, 5000);
+          console.warn('Google Sheet Save Failed:', res);
+          alert(`⚠️ Google Sheet Error:\n${errMsg}\n\nInvoice local cache में सुरक्षित है, लेकिन Google Sheet में sync नहीं हो सका।`);
+          return res;
         }
-      });
+      } else {
+        showToast(`Invoice ${invoiceToSave.invoiceNumber} saved locally!`);
+      }
+    } catch (err) {
+      console.error('Error during invoice save:', err);
+      updateSheetSyncStatus('error', '⚠️ Google Sheet Offline');
+      showToast(`❌ Error: ${err.message}`, 5000);
+    } finally {
+      elements.btnSaveInvoice.disabled = false;
+      elements.btnSaveInvoice.innerHTML = originalSaveHtml;
     }
   }
 
@@ -700,32 +735,59 @@
    */
   async function saveAndCreateNextInvoice() {
     recalculateInvoice();
-    StorageManager.saveInvoice(currentInvoice);
 
-    if (currentInvoice.customer && currentInvoice.customer.name) {
-      StorageManager.addCustomerIfNew(currentInvoice.customer);
+    const originalBtnHtml = elements.btnSaveAndNext ? elements.btnSaveAndNext.innerHTML : '';
+    if (elements.btnSaveAndNext) {
+      elements.btnSaveAndNext.disabled = true;
+      elements.btnSaveAndNext.innerHTML = `
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10"></path>
+        </svg>
+        Saving to Sheet...
+      `;
+    }
+
+    const invoiceToSave = JSON.parse(JSON.stringify(currentInvoice));
+    StorageManager.saveInvoice(invoiceToSave);
+
+    if (invoiceToSave.customer && invoiceToSave.customer.name) {
+      StorageManager.addCustomerIfNew(invoiceToSave.customer);
       renderCustomersList();
     }
 
-    if (window.GoogleSheetSync && GoogleSheetSync.isEnabled()) {
-      GoogleSheetSync.saveInvoice(currentInvoice).then(res => {
+    try {
+      if (window.GoogleSheetSync && GoogleSheetSync.isEnabled()) {
+        updateSheetSyncStatus('loading', `⏳ Saving ${invoiceToSave.invoiceNumber}...`);
+        const res = await GoogleSheetSync.saveInvoice(invoiceToSave);
         if (res && res.success) {
-          console.log('Synced invoice to Google Sheet:', currentInvoice.invoiceNumber);
+          showToast(`✅ ${invoiceToSave.invoiceNumber} Google Sheet में सेव हो गया!`);
+        } else {
+          showToast(`⚠️ Local saved, but sheet sync failed: ${res?.error || ''}`, 4000);
         }
-      });
+      }
+
+      const savedNumber = invoiceToSave.invoiceNumber;
+
+      // Authoritative next number computed from sheet after current bill is saved
+      const nextNum = await GoogleSheetSync.getNextInvoiceNumber();
+      const blank = createBlankInvoice(nextNum);
+      currentInvoice = blank;
+      loadInvoiceIntoEditor(blank);
+      renderPreview();
+      updateQuickInvoiceSelector();
+      updateInvoicesCount();
+      updateSheetSyncStatus('connected');
+      showToast(`Invoice ${savedNumber} saved! Next invoice ${blank.invoiceNumber} is ready.`);
+    } catch (err) {
+      console.error('Error in saveAndCreateNextInvoice:', err);
+      showToast(`Error: ${err.message}`, 4000);
+    } finally {
+      if (elements.btnSaveAndNext) {
+        elements.btnSaveAndNext.disabled = false;
+        elements.btnSaveAndNext.innerHTML = originalBtnHtml;
+      }
     }
-
-    const savedNumber = currentInvoice.invoiceNumber;
-
-    // Fetch authoritative next number from Google Sheet
-    const nextNum = await GoogleSheetSync.getNextInvoiceNumber();
-    const blank = createBlankInvoice(nextNum);
-    currentInvoice = blank;
-    loadInvoiceIntoEditor(blank);
-    renderPreview();
-    updateQuickInvoiceSelector();
-    updateInvoicesCount();
-    showToast(`Invoice ${savedNumber} saved! Next invoice ${blank.invoiceNumber} is ready.`);
   }
 
   /**
@@ -845,7 +907,7 @@
   /**
    * Delete Current Invoice
    */
-  function deleteCurrentInvoice() {
+  async function deleteCurrentInvoice() {
     if (!confirm(`Are you sure you want to delete invoice ${currentInvoice.invoiceNumber}?`)) {
       return;
     }
@@ -853,7 +915,8 @@
     const delId = currentInvoice.id;
     StorageManager.deleteInvoice(delId);
     if (window.GoogleSheetSync && GoogleSheetSync.isEnabled()) {
-      GoogleSheetSync.deleteInvoice(delId);
+      updateSheetSyncStatus('loading', 'Deleting invoice from Google Sheet...');
+      await GoogleSheetSync.deleteInvoice(delId);
     }
     const remaining = StorageManager.getInvoices();
     if (remaining.length > 0) {
@@ -865,18 +928,19 @@
     }
 
     updateInvoicesCount();
+    updateSheetSyncStatus('connected');
     showToast('Invoice deleted from Google Sheet.');
   }
 
   /**
    * Handle Print / Browser PDF Save
    */
-  function handlePrint() {
-    saveCurrentInvoice();
+  async function handlePrint() {
+    await saveCurrentInvoice();
     window.print();
     if (settings.autoAdvanceOnPrint) {
-      setTimeout(() => {
-        saveAndCreateNextInvoice();
+      setTimeout(async () => {
+        await saveAndCreateNextInvoice();
       }, 500);
     }
   }
@@ -884,8 +948,8 @@
   /**
    * Handle Direct PDF Download using html2pdf
    */
-  function handleDownloadPdf() {
-    saveCurrentInvoice();
+  async function handleDownloadPdf() {
+    await saveCurrentInvoice();
     showToast('Generating PDF file, please wait...');
 
     const element = document.getElementById('invoice-print-container');
@@ -1029,15 +1093,17 @@
     });
 
     elements.invoicesHistoryBody.querySelectorAll('.btn-table-del').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         if (confirm('Delete this invoice?')) {
           const delId = btn.dataset.id;
           StorageManager.deleteInvoice(delId);
           if (window.GoogleSheetSync && GoogleSheetSync.isEnabled()) {
-            GoogleSheetSync.deleteInvoice(delId);
+            updateSheetSyncStatus('loading', 'Deleting from Google Sheet...');
+            await GoogleSheetSync.deleteInvoice(delId);
           }
           renderInvoicesList(elements.searchInvoicesInput.value);
           updateInvoicesCount();
+          updateSheetSyncStatus('connected');
           showToast('Invoice deleted from Google Sheet.');
         }
       });

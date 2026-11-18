@@ -66,28 +66,39 @@ const GoogleSheetSync = {
   },
 
   /**
-   * Save or Update invoice in Google Sheet (background async)
+   * Save or Update invoice in Google Sheet (Primary Cloud Database)
    */
   async saveInvoice(invoice) {
-    if (!this.isEnabled()) return null;
+    if (!this.isEnabled()) return { success: false, error: 'Google Sheet Sync is disabled' };
+    if (!invoice || !invoice.invoiceNumber) {
+      return { success: false, error: 'Invalid invoice data' };
+    }
 
     const url = this.getAppScriptUrl();
     try {
+      // Deep clone to ensure stability during serialization
+      const payloadInvoice = JSON.parse(JSON.stringify(invoice));
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
+
       // Use text/plain to avoid preflight CORS options in Google Apps Script
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: 'saveInvoice',
-          invoice: invoice
-        })
+          invoice: payloadInvoice
+        }),
+        signal: controller.signal
       });
 
+      clearTimeout(timeoutId);
       const data = await res.json();
       return data;
     } catch (err) {
       console.warn('Failed to sync invoice to Google Sheet:', err);
-      return { success: false, error: err.message };
+      return { success: false, error: err.message || 'Network request failed' };
     }
   },
 
