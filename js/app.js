@@ -69,6 +69,7 @@
     // Editor Actions
     btnSaveInvoice: document.getElementById('btn-save-invoice'),
     btnSaveAndNext: document.getElementById('btn-save-and-next'),
+    btnCloneNextBill: document.getElementById('btn-clone-next-bill'),
     btnDuplicateInvoice: document.getElementById('btn-duplicate-invoice'),
     btnDeleteInvoice: document.getElementById('btn-delete-invoice'),
 
@@ -99,6 +100,8 @@
     // Settings Tab
     settingsForm: document.getElementById('settings-form'),
     btnSaveSettings: document.getElementById('btn-save-settings'),
+    btnSyncNextNumber: document.getElementById('btn-sync-next-number'),
+    setAutoAdvancePrint: document.getElementById('set-auto-advance-print'),
     btnExportJson: document.getElementById('btn-export-json'),
     btnImportJsonTrigger: document.getElementById('btn-import-json-trigger'),
     importJsonFile: document.getElementById('import-json-file'),
@@ -164,17 +167,22 @@
           }
         });
 
-        // Compute next invoice number based on sheet
-        const nextInfo = StorageManager.computeNextInvoiceNumber();
-        settings.nextInvoiceNumber = nextInfo.nextNumber;
-        StorageManager.saveSettings(settings);
+        // Compute authoritative next invoice number from Google Sheet
+        const nextNum = await GoogleSheetSync.getNextInvoiceNumber();
+        const matches = nextNum.match(/\d+/g);
+        if (matches && matches.length > 0) {
+          const num = parseInt(matches[matches.length - 1], 10);
+          if (!isNaN(num)) {
+            settings.nextInvoiceNumber = num;
+            StorageManager.saveSettings(settings);
+          }
+        }
 
-        // Load most recent invoice from Google Sheet if available
-        if (invoices.length > 0) {
-          const sorted = [...invoices].sort((a, b) => {
-            return (b.invoiceNumber || '').localeCompare(a.invoiceNumber || '', undefined, { numeric: true });
-          });
-          currentInvoice = sorted[0];
+        // On fresh startup, automatically prepare a fresh ready-to-bill draft with next number
+        // so user can immediately bill the next customer without overwriting past bills
+        if (!isManual) {
+          const freshDraft = createBlankInvoice(nextNum);
+          currentInvoice = freshDraft;
           StorageManager.setActiveInvoiceId(currentInvoice.id);
           loadInvoiceIntoEditor(currentInvoice);
           renderPreview();
@@ -189,7 +197,7 @@
         if (isManual) {
           showToast(`✅ Google Sheet से ${invoices.length} इनवॉइस रिफ्रेश हो गए!`);
         } else {
-          showToast(`✅ Google Sheet Database Connected (${invoices.length} Bills Loaded)`);
+          showToast(`✅ Google Sheet Connected (${invoices.length} Bills) — Ready on ${nextNum}!`);
         }
       } else {
         updateSheetSyncStatus('error', '⚠️ Google Sheet Reconnecting...');
@@ -284,6 +292,9 @@
       });
     }
 
+    if (elements.btnCloneNextBill) {
+      elements.btnCloneNextBill.addEventListener('click', cloneAsNewBill);
+    }
     elements.btnDuplicateInvoice.addEventListener('click', duplicateCurrentInvoice);
     elements.btnDeleteInvoice.addEventListener('click', deleteCurrentInvoice);
 
@@ -324,6 +335,9 @@
 
     // Settings
     elements.btnSaveSettings.addEventListener('click', handleSaveSettings);
+    if (elements.btnSyncNextNumber) {
+      elements.btnSyncNextNumber.addEventListener('click', handleSyncNextNumberFromSheet);
+    }
     elements.btnExportJson.addEventListener('click', handleExportJson);
     elements.btnImportJsonTrigger.addEventListener('click', () => elements.importJsonFile.click());
     elements.importJsonFile.addEventListener('change', handleImportJson);
@@ -339,7 +353,7 @@
       elements.btnFetchFromSheet.addEventListener('click', handleFetchFromGoogleSheet);
     }
 
-    // Keyboard Shortcuts (Ctrl+P, Ctrl+S)
+    // Keyboard Shortcuts (Ctrl+P, Ctrl+S, Ctrl+Enter)
     window.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
         e.preventDefault();
@@ -348,6 +362,10 @@
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         saveCurrentInvoice();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        saveAndCreateNextInvoice();
       }
     });
   }
@@ -374,13 +392,14 @@
   /**
    * Create Blank Invoice
    */
-  function createBlankInvoice() {
+  function createBlankInvoice(forcedNumber = null) {
     const today = new Date().toISOString().split('T')[0];
     const nextInfo = StorageManager.computeNextInvoiceNumber();
+    const invNum = forcedNumber || nextInfo.formattedInvoiceNumber;
 
     return {
       id: 'inv-' + Date.now(),
-      invoiceNumber: nextInfo.formattedInvoiceNumber,
+      invoiceNumber: invNum,
       invoiceType: settings.invoiceTitle || 'TAX INVOICE',
       copyType: 'ORIGINAL',
       date: today,
@@ -400,6 +419,18 @@
       discountType: 'flat',
       discountValue: 0,
       discountAmount: 0,
+      taxType: 'none',
+      taxRate: 0,
+      taxAmount: 0,
+      total: 0,
+      paymentMade: 0,
+      balanceDue: 0,
+      notes: settings.defaultNotes || 'Thanks for your business.',
+      status: 'paid',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  }
       taxType: 'none',
       taxRate: 0,
       taxAmount: 0,
@@ -677,7 +708,7 @@
   /**
    * Save Current Invoice and Automatically advance to next sequential invoice number
    */
-  function saveAndCreateNextInvoice() {
+  async function saveAndCreateNextInvoice() {
     recalculateInvoice();
     StorageManager.saveInvoice(currentInvoice);
 
@@ -696,34 +727,57 @@
 
     const savedNumber = currentInvoice.invoiceNumber;
 
-    // Automatically compute next invoice number
-    const nextInfo = StorageManager.computeNextInvoiceNumber();
-    settings.nextInvoiceNumber = nextInfo.nextNumber + 1;
-    StorageManager.saveSettings(settings);
-
-    const blank = createBlankInvoice();
-    StorageManager.saveInvoice(blank);
+    // Fetch authoritative next number from Google Sheet
+    const nextNum = await GoogleSheetSync.getNextInvoiceNumber();
+    const blank = createBlankInvoice(nextNum);
+    currentInvoice = blank;
     loadInvoiceIntoEditor(blank);
+    renderPreview();
     updateQuickInvoiceSelector();
     updateInvoicesCount();
-    showToast(`Invoice ${savedNumber} saved to Google Sheet! Next invoice ${blank.invoiceNumber} is ready.`);
+    showToast(`Invoice ${savedNumber} saved! Next invoice ${blank.invoiceNumber} is ready.`);
   }
 
   /**
    * Start New Blank Invoice with auto-incremented number
    */
-  function startNewInvoice() {
-    const nextInfo = StorageManager.computeNextInvoiceNumber();
-    settings.nextInvoiceNumber = nextInfo.nextNumber + 1;
-    StorageManager.saveSettings(settings);
-
-    const blank = createBlankInvoice();
-    StorageManager.saveInvoice(blank);
+  async function startNewInvoice() {
+    showToast('Allocating next invoice number...');
+    const nextNum = await GoogleSheetSync.getNextInvoiceNumber();
+    const blank = createBlankInvoice(nextNum);
+    currentInvoice = blank;
     loadInvoiceIntoEditor(blank);
+    renderPreview();
     updateQuickInvoiceSelector();
     updateInvoicesCount();
     switchTab('tab-editor');
-    showToast(`New Invoice ${blank.invoiceNumber} created!`);
+    showToast(`New Invoice ${blank.invoiceNumber} ready for entry!`);
+  }
+
+  /**
+   * Clone Current Invoice as a New Bill with the Next Sequential Number
+   * Protects the current saved invoice from being accidentally modified.
+   */
+  async function cloneAsNewBill() {
+    showToast('Allocating next sequential number...');
+    const nextNum = await GoogleSheetSync.getNextInvoiceNumber();
+
+    const clone = JSON.parse(JSON.stringify(currentInvoice));
+    const oldNum = currentInvoice.invoiceNumber;
+    clone.id = 'inv-' + Date.now();
+    clone.invoiceNumber = nextNum;
+    clone.createdAt = new Date().toISOString();
+    clone.updatedAt = new Date().toISOString();
+
+    const today = new Date().toISOString().split('T')[0];
+    clone.date = today;
+    clone.dueDate = today;
+
+    currentInvoice = clone;
+    loadInvoiceIntoEditor(currentInvoice);
+    renderPreview();
+    updateQuickInvoiceSelector();
+    showToast(`⚡ Cloned into new invoice ${nextNum}! Original ${oldNum} is untouched.`);
   }
 
   /**
@@ -752,17 +806,19 @@
       const opt = document.createElement('option');
       opt.value = currentInvoice.id;
       opt.selected = true;
-      opt.textContent = `⚡ ${currentInvoice.invoiceNumber} (New Bill - Draft)`;
+      opt.textContent = `⚡ ${currentInvoice.invoiceNumber} (New Bill Ready)`;
       elements.selectPastInvoice.prepend(opt);
     }
 
     if (elements.editorActiveMode && currentInvoice) {
       if (exists) {
         elements.editorActiveMode.className = 'badge badge-paid';
-        elements.editorActiveMode.textContent = `${currentInvoice.invoiceNumber} (Saved Bill)`;
+        elements.editorActiveMode.innerHTML = `🔒 <strong>${InvoiceTemplate.escapeHtml(currentInvoice.invoiceNumber)}</strong> (Saved Bill)`;
+        elements.editorActiveMode.title = 'Saved invoice. Editing will update this past record.';
       } else {
         elements.editorActiveMode.className = 'badge badge-partial';
-        elements.editorActiveMode.textContent = `${currentInvoice.invoiceNumber} (New Draft)`;
+        elements.editorActiveMode.innerHTML = `⚡ <strong>${InvoiceTemplate.escapeHtml(currentInvoice.invoiceNumber)}</strong> (New Bill Ready)`;
+        elements.editorActiveMode.title = 'New bill ready for customer. Saving will store as a new invoice.';
       }
     }
   }
@@ -828,6 +884,11 @@
   function handlePrint() {
     saveCurrentInvoice();
     window.print();
+    if (settings.autoAdvanceOnPrint) {
+      setTimeout(() => {
+        saveAndCreateNextInvoice();
+      }, 500);
+    }
   }
 
   /**
@@ -1168,6 +1229,9 @@
     document.getElementById('set-ifsc').value = settings.ifscCode || '';
     document.getElementById('set-prefix').value = settings.invoicePrefix || 'INV-';
     document.getElementById('set-next-num').value = settings.nextInvoiceNumber || 156;
+    if (elements.setAutoAdvancePrint) {
+      elements.setAutoAdvancePrint.checked = settings.autoAdvanceOnPrint !== false;
+    }
     document.getElementById('set-notes').value = settings.defaultNotes || 'Thanks for your business.';
     document.getElementById('set-footer-tagline').value = settings.footerTagline || '';
     if (elements.setSheetUrl) {
@@ -1225,6 +1289,9 @@
     settings.ifscCode = document.getElementById('set-ifsc').value.trim();
     settings.invoicePrefix = document.getElementById('set-prefix').value.trim();
     settings.nextInvoiceNumber = parseInt(document.getElementById('set-next-num').value) || 156;
+    if (elements.setAutoAdvancePrint) {
+      settings.autoAdvanceOnPrint = elements.setAutoAdvancePrint.checked;
+    }
     settings.defaultNotes = document.getElementById('set-notes').value.trim();
     settings.footerTagline = document.getElementById('set-footer-tagline').value.trim();
 
@@ -1237,6 +1304,28 @@
     updateSheetSyncBadge();
     renderPreview();
     showToast('Settings saved successfully!');
+  }
+
+  async function handleSyncNextNumberFromSheet() {
+    if (!elements.btnSyncNextNumber) return;
+    elements.btnSyncNextNumber.disabled = true;
+    elements.btnSyncNextNumber.textContent = '⏳ Checking...';
+    try {
+      const nextNum = await GoogleSheetSync.getNextInvoiceNumber();
+      const matches = nextNum.match(/\d+/g);
+      if (matches && matches.length > 0) {
+        const num = parseInt(matches[matches.length - 1], 10);
+        document.getElementById('set-next-num').value = num;
+        settings.nextInvoiceNumber = num;
+        StorageManager.saveSettings(settings);
+      }
+      showToast(`✅ Synced with Google Sheet! Next invoice is ${nextNum}`);
+    } catch (err) {
+      alert('Failed to sync sequence from Google Sheet: ' + (err.message || 'Error'));
+    } finally {
+      elements.btnSyncNextNumber.disabled = false;
+      elements.btnSyncNextNumber.textContent = '🔄 Sync with Sheet';
+    }
   }
 
   async function handleTestGoogleSheet() {

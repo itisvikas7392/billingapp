@@ -305,13 +305,16 @@
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                 Save Invoice
               </button>
-              <button class="btn btn-success" id="btn-save-and-next" style="flex:1.2;" title="Save this invoice and automatically advance to next invoice number">
+              <button class="btn btn-success" id="btn-save-and-next" style="flex:1.2;" title="Save this invoice and automatically advance to next invoice number (Ctrl+Enter)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                Save &amp; Next Invoice (+1)
+                Save &amp; Next (+1)
               </button>
             </div>
             <div style="display:flex; gap:0.75rem;">
-              <button class="btn btn-secondary btn-sm" id="btn-duplicate-invoice" style="flex:1;">
+              <button class="btn btn-secondary btn-sm" id="btn-clone-next-bill" style="flex:1.3; background:#f0fdf4; color:#15803d; border-color:#86efac; font-weight:600;" title="Create a new bill by copying items/customer to the next sequential invoice number without modifying this bill">
+                ⚡ Clone as New Bill (+1)
+              </button>
+              <button class="btn btn-secondary btn-sm" id="btn-duplicate-invoice" style="flex:1;" title="Duplicate copy of this invoice">
                 Duplicate Copy
               </button>
               <button class="btn btn-danger btn-sm" id="btn-delete-invoice">
@@ -574,8 +577,18 @@
             </div>
             <div class="form-group">
               <label for="set-next-num">Next Invoice Counter</label>
-              <input type="number" id="set-next-num" class="form-control" value="156">
+              <div style="display:flex; gap:0.5rem;">
+                <input type="number" id="set-next-num" class="form-control" value="156">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-sync-next-number" title="Fetch current sequence counter directly from Google Sheet" style="white-space:nowrap;">🔄 Sync with Sheet</button>
+              </div>
             </div>
+          </div>
+
+          <div class="form-group" style="margin-top:0.5rem; margin-bottom:1rem;">
+            <label style="display:inline-flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.875rem;">
+              <input type="checkbox" id="set-auto-advance-print" checked>
+              <span><strong>Auto-advance on Print:</strong> बिल प्रिंट या PDF डाउनलोड करने के बाद स्वतः अगला बिल नंबर (+1) लोड करें</span>
+            </label>
           </div>
 
           <div class="form-group">

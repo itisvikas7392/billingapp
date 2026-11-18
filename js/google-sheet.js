@@ -42,6 +42,30 @@ const GoogleSheetSync = {
   },
 
   /**
+   * Fetch the server-authoritative next sequential invoice number from Google Sheet
+   */
+  async getNextInvoiceNumber() {
+    if (!this.isEnabled()) {
+      return StorageManager.computeNextInvoiceNumber().formattedInvoiceNumber;
+    }
+
+    const url = this.getAppScriptUrl();
+    try {
+      const target = url.includes('?') ? `${url}&action=getNextNumber` : `${url}?action=getNextNumber`;
+      const res = await fetch(target, { method: 'GET' });
+      const data = await res.json();
+      if (data && data.success && data.nextNumber) {
+        return data.nextNumber;
+      }
+    } catch (err) {
+      console.warn('Failed to fetch next number from Google Sheet, falling back to local calculation:', err);
+    }
+
+    // Client-side fallback if offline
+    return StorageManager.computeNextInvoiceNumber().formattedInvoiceNumber;
+  },
+
+  /**
    * Save or Update invoice in Google Sheet (background async)
    */
   async saveInvoice(invoice) {

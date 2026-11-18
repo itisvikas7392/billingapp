@@ -187,8 +187,8 @@
         "Typecheck passes"
       ],
       "priority": 12,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented in js/google-sheet.js"
     },
     {
       "id": "US-013",
@@ -202,8 +202,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 13,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented in js/app.js autoFetchFromGoogleSheet and createBlankInvoice"
     },
     {
       "id": "US-014",
@@ -217,8 +217,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 14,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented in js/app.js saveAndCreateNextInvoice and handlePrint"
     },
     {
       "id": "US-015",
@@ -231,8 +231,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 15,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented in index.html btn-clone-next-bill and js/app.js cloneAsNewBill"
     },
     {
       "id": "US-016",
@@ -245,8 +245,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 16,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented in index.html btn-sync-next-number and js/app.js handleSyncNextNumberFromSheet"
     }
   ]
 }

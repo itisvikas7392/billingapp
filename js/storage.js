@@ -26,6 +26,7 @@ const DEFAULT_SETTINGS = {
   ifscCode: '',
   invoicePrefix: 'INV-',
   nextInvoiceNumber: 156,
+  autoAdvanceOnPrint: true,
   defaultTerms: 'Due on Receipt',
   defaultNotes: 'Thanks for your business.',
   currencySymbol: '₹',
