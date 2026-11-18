@@ -355,8 +355,45 @@
       elements.btnFetchFromSheet.addEventListener('click', handleFetchFromGoogleSheet);
     }
 
-    // Keyboard Shortcuts (Ctrl+P, Ctrl+S, Ctrl+Enter)
+    // Settings Auth Lock Listeners
+    const btnSubmitModalAuth = document.getElementById('btn-submit-settings-auth');
+    const btnCancelModalAuth = document.getElementById('btn-cancel-settings-auth');
+    const inputModalAuth = document.getElementById('input-modal-settings-password');
+    const btnUnlockInline = document.getElementById('btn-unlock-inline-settings');
+    const inputInlineAuth = document.getElementById('input-inline-settings-password');
+    const btnLockSettings = document.getElementById('btn-lock-settings');
+
+    if (btnSubmitModalAuth) btnSubmitModalAuth.addEventListener('click', handleModalAuthSubmit);
+    if (btnCancelModalAuth) btnCancelModalAuth.addEventListener('click', closeSettingsAuthModal);
+    if (inputModalAuth) {
+      inputModalAuth.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleModalAuthSubmit();
+        }
+      });
+    }
+
+    if (btnUnlockInline) btnUnlockInline.addEventListener('click', handleInlineAuthSubmit);
+    if (inputInlineAuth) {
+      inputInlineAuth.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleInlineAuthSubmit();
+        }
+      });
+    }
+
+    if (btnLockSettings) btnLockSettings.addEventListener('click', lockSettings);
+
+    // Keyboard Shortcuts (Ctrl+P, Ctrl+S, Ctrl+Enter, Esc)
     window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('modal-settings-auth');
+        if (modal && modal.style.display === 'flex') {
+          closeSettingsAuthModal();
+        }
+      }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
         e.preventDefault();
         handlePrint();
@@ -372,10 +409,19 @@
     });
   }
 
+  // Settings Password Lock Protection
+  const SETTINGS_PASSWORD = 'Vik@8604';
+  let isSettingsUnlocked = false;
+
   /**
    * Switch Active Tab
    */
   function switchTab(tabId) {
+    if (tabId === 'tab-settings' && !isSettingsUnlocked) {
+      openSettingsAuthModal();
+      return;
+    }
+
     activeTab = tabId;
     elements.navBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
     elements.tabContents.forEach(c => c.classList.toggle('active', c.id === tabId));
@@ -388,6 +434,84 @@
       renderCatalogList();
     } else if (tabId === 'tab-editor') {
       renderPreview();
+    }
+  }
+
+  function openSettingsAuthModal() {
+    const modal = document.getElementById('modal-settings-auth');
+    const input = document.getElementById('input-modal-settings-password');
+    const err = document.getElementById('modal-settings-auth-error');
+
+    if (err) err.style.display = 'none';
+    if (input) {
+      input.value = '';
+      input.style.borderColor = '';
+    }
+    if (modal) {
+      modal.style.display = 'flex';
+      setTimeout(() => {
+        if (input) input.focus();
+      }, 50);
+    }
+  }
+
+  function closeSettingsAuthModal() {
+    const modal = document.getElementById('modal-settings-auth');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function unlockSettings() {
+    isSettingsUnlocked = true;
+    closeSettingsAuthModal();
+    const lockedScreen = document.getElementById('settings-locked-screen');
+    const unlockedScreen = document.getElementById('settings-unlocked-screen');
+    if (lockedScreen) lockedScreen.style.display = 'none';
+    if (unlockedScreen) unlockedScreen.style.display = 'block';
+
+    switchTab('tab-settings');
+    showToast('🔓 Settings unlocked!');
+  }
+
+  function lockSettings() {
+    isSettingsUnlocked = false;
+    const lockedScreen = document.getElementById('settings-locked-screen');
+    const unlockedScreen = document.getElementById('settings-unlocked-screen');
+    if (lockedScreen) lockedScreen.style.display = 'block';
+    if (unlockedScreen) unlockedScreen.style.display = 'none';
+
+    switchTab('tab-editor');
+    showToast('🔒 Settings locked successfully');
+  }
+
+  function handleModalAuthSubmit() {
+    const input = document.getElementById('input-modal-settings-password');
+    const err = document.getElementById('modal-settings-auth-error');
+    const val = (input ? input.value : '');
+
+    if (val === SETTINGS_PASSWORD) {
+      unlockSettings();
+    } else {
+      if (err) err.style.display = 'block';
+      if (input) {
+        input.style.borderColor = '#ef4444';
+        input.select();
+      }
+    }
+  }
+
+  function handleInlineAuthSubmit() {
+    const input = document.getElementById('input-inline-settings-password');
+    const err = document.getElementById('inline-settings-auth-error');
+    const val = (input ? input.value : '');
+
+    if (val === SETTINGS_PASSWORD) {
+      unlockSettings();
+    } else {
+      if (err) err.style.display = 'block';
+      if (input) {
+        input.style.borderColor = '#ef4444';
+        input.select();
+      }
     }
   }
 

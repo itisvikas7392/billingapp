@@ -46,7 +46,7 @@
       </button>
       <button class="nav-btn" data-tab="tab-settings">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-        Settings
+        Settings <span style="font-size:0.75rem; margin-left:2px;" title="Locked with password">🔒</span>
       </button>
     </nav>
 
@@ -487,13 +487,37 @@
     <!-- TAB 5: BUSINESS SETTINGS                   -->
     <!-- ========================================== -->
     <div class="tab-content" id="tab-settings">
-      <div class="content-page" style="max-width: 800px;">
+      <!-- Locked State Display (Default) -->
+      <div id="settings-locked-screen" class="content-page" style="max-width: 480px; margin: 3rem auto; text-align: center; background: #ffffff; padding: 2.75rem 2rem; border-radius: 12px; border: 1px solid var(--border-light); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+        <div style="width: 60px; height: 60px; margin: 0 auto 1.25rem; background: #eff6ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.85rem;">
+          🔒
+        </div>
+        <h2 style="font-size: 1.3rem; margin-bottom: 0.5rem; color: var(--text-dark);">Settings is Locked</h2>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.5rem; line-height: 1.5;">
+          Business profile, bank details, and Google Sheet database settings are password protected.
+        </p>
+        <div style="max-width: 300px; margin: 0 auto 1rem;">
+          <input type="password" id="input-inline-settings-password" class="form-control" placeholder="Enter Password" style="text-align: center; font-size: 1rem; letter-spacing: 2px;" autocomplete="current-password">
+          <div id="inline-settings-auth-error" style="color: #ef4444; font-size: 0.82rem; margin-top: 0.5rem; display: none;">
+            ❌ Incorrect password! Please try again.
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" id="btn-unlock-inline-settings" style="min-width: 140px;">
+          Unlock Settings
+        </button>
+      </div>
+
+      <!-- Unlocked Settings Content (Initially Hidden) -->
+      <div id="settings-unlocked-screen" class="content-page" style="max-width: 800px; display: none;">
         <div class="page-header-row">
           <div>
             <h2 class="page-title">Business & Billing Settings</h2>
             <p style="color:var(--text-muted); font-size:0.88rem;">Set default business profile, bank details, and invoice formatting.</p>
           </div>
-          <button class="btn btn-primary btn-sm" id="btn-save-settings">Save Changes</button>
+          <div style="display:flex; gap:0.5rem; align-items:center;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-lock-settings" title="Lock Settings with Password">🔒 Lock</button>
+            <button class="btn btn-primary btn-sm" id="btn-save-settings">Save Changes</button>
+          </div>
         </div>
 
         <form id="settings-form" class="form-section">
@@ -648,6 +672,29 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- Settings Password Auth Modal -->
+  <div class="modal-overlay" id="modal-settings-auth" style="display:none;">
+    <div class="modal-card" style="max-width: 380px; text-align: center;">
+      <div style="width: 56px; height: 56px; margin: 0 auto 1rem; background: #eff6ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.75rem;">
+        🔒
+      </div>
+      <h3 style="margin-bottom: 0.35rem; font-size: 1.2rem; color: var(--text-dark);">Settings is Locked</h3>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">
+        Enter master password to access settings.
+      </p>
+      <div class="form-group" style="text-align: left; margin-bottom: 1rem;">
+        <input type="password" id="input-modal-settings-password" class="form-control" placeholder="Enter Password" style="font-size: 1rem; text-align: center; letter-spacing: 2px;" autocomplete="current-password">
+        <div id="modal-settings-auth-error" style="color: #ef4444; font-size: 0.82rem; margin-top: 0.4rem; text-align: center; display: none;">
+          ❌ Incorrect password! Please try again.
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-settings-auth" style="flex: 1;">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btn-submit-settings-auth" style="flex: 1;">Unlock</button>
+      </div>
+    </div>
   </div>
 
   <!-- Toast Notification element -->
