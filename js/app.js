@@ -192,6 +192,8 @@
         updateQuickInvoiceSelector();
         updateInvoicesCount();
         renderCustomersList();
+        renderCatalogList();
+        populateCatalogDropdown();
         updateSheetSyncStatus('connected');
 
         if (isManual) {
@@ -1231,18 +1233,28 @@
     const address = prompt('Address (optional):') || '';
     const gstin = prompt('GSTIN (optional):') || '';
 
-    const list = StorageManager.getCustomers();
-    list.push({
+    const newCust = {
       id: 'cust-' + Date.now(),
       name,
       phone,
       email,
       address,
       gstin
-    });
+    };
+
+    const list = StorageManager.getCustomers();
+    list.push(newCust);
     StorageManager.saveCustomers(list);
     renderCustomersList();
     showToast('Customer added!');
+
+    if (GoogleSheetSync.isEnabled()) {
+      GoogleSheetSync.saveCustomer(newCust).then(res => {
+        if (res && res.success) {
+          showToast(`⚡ Customer "${name}" Google Sheet me save ho gaya!`);
+        }
+      });
+    }
   }
 
   function promptAddItem() {
@@ -1252,18 +1264,28 @@
     const hsn = prompt('HSN / SAC Code (optional):') || '';
     const description = prompt('Description (optional):') || '';
 
-    const list = StorageManager.getItems();
-    list.push({
+    const newItem = {
       id: 'item-' + Date.now(),
       name,
       rate,
       hsn,
       description
-    });
+    };
+
+    const list = StorageManager.getItems();
+    list.push(newItem);
     StorageManager.saveItems(list);
     renderCatalogList();
     populateCatalogDropdown();
     showToast('Item added to catalog!');
+
+    if (GoogleSheetSync.isEnabled()) {
+      GoogleSheetSync.saveProduct(newItem).then(res => {
+        if (res && res.success) {
+          showToast(`⚡ Product "${name}" Google Sheet me save ho gaya!`);
+        }
+      });
+    }
   }
 
   /**
@@ -1407,10 +1429,14 @@
       alert('Please save a valid Google Apps Script Web App URL first.');
       return;
     }
-    showToast('Uploading all bills to Google Sheet...');
+    showToast('Uploading all bills, customers & products to Google Sheet...');
     const res = await GoogleSheetSync.syncAllLocalToSheet();
     if (res && res.success) {
-      showToast(`Successfully synced ${res.count} invoices to Google Sheet!`);
+      const countMsg = res.invoicesCount || res.count || 'all';
+      showToast(`Successfully synced ${countMsg} invoices, customers & products to Google Sheet!`);
+      renderCustomersList();
+      renderCatalogList();
+      populateCatalogDropdown();
     } else {
       alert('Sync failed: ' + (res.error || 'Check internet connection'));
     }

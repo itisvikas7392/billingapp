@@ -127,6 +127,52 @@ const GoogleSheetSync = {
   },
 
   /**
+   * Save or Update a Customer in Google Sheet
+   */
+  async saveCustomer(customer) {
+    if (!this.isEnabled()) return null;
+
+    const url = this.getAppScriptUrl();
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'saveCustomer',
+          customer: customer
+        })
+      });
+      return await res.json();
+    } catch (err) {
+      console.warn('Sync customer to Google Sheet failed:', err);
+      return { success: false, error: err.message };
+    }
+  },
+
+  /**
+   * Save or Update a Product in Google Sheet
+   */
+  async saveProduct(product) {
+    if (!this.isEnabled()) return null;
+
+    const url = this.getAppScriptUrl();
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'saveProduct',
+          product: product
+        })
+      });
+      return await res.json();
+    } catch (err) {
+      console.warn('Sync product to Google Sheet failed:', err);
+      return { success: false, error: err.message };
+    }
+  },
+
+  /**
    * Fetch all invoices from Google Sheet (Primary Master Database)
    */
   async fetchInvoices() {
@@ -143,13 +189,58 @@ const GoogleSheetSync = {
         // Overwrite cache with master sheet invoices
         if (sheetInvoices.length > 0) {
           StorageManager.saveInvoices(sheetInvoices);
+
+          // Extract customers and catalog items
           sheetInvoices.forEach(inv => {
             if (inv.customer && inv.customer.name) {
               StorageManager.addCustomerIfNew(inv.customer);
             }
+            if (inv.items && Array.isArray(inv.items)) {
+              inv.items.forEach(it => {
+                const itemName = (it.description || it.name || '').trim();
+                if (itemName) {
+                  const existing = StorageManager.getItems();
+                  if (!existing.some(x => x.name.toLowerCase() === itemName.toLowerCase())) {
+                    existing.push({
+                      id: 'item-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+                      name: itemName,
+                      rate: Number(it.rate) || 0,
+                      hsn: it.hsn || '',
+                      description: it.description || itemName
+                    });
+                    StorageManager.saveItems(existing);
+                  }
+                }
+              });
+            }
           });
         }
-        return { success: true, count: sheetInvoices.length, invoices: sheetInvoices };
+
+        // If Google Sheet backend returned dedicated customers list
+        if (Array.isArray(data.customers) && data.customers.length > 0) {
+          data.customers.forEach(cust => {
+            if (cust && cust.name) StorageManager.addCustomerIfNew(cust);
+          });
+        }
+
+        // If Google Sheet backend returned dedicated products list
+        if (Array.isArray(data.products) && data.products.length > 0) {
+          const currentItems = StorageManager.getItems();
+          data.products.forEach(p => {
+            if (p && p.name && !currentItems.some(x => x.name.toLowerCase() === p.name.toLowerCase())) {
+              currentItems.push(p);
+            }
+          });
+          StorageManager.saveItems(currentItems);
+        }
+
+        return {
+          success: true,
+          count: sheetInvoices.length,
+          invoices: sheetInvoices,
+          customers: data.customers || [],
+          products: data.products || []
+        };
       }
 
       return data;
@@ -160,20 +251,25 @@ const GoogleSheetSync = {
   },
 
   /**
-   * Sync all existing local invoices to Google Sheet
+   * Sync all existing local invoices, customers, and products to Google Sheet
    */
   async syncAllLocalToSheet() {
     if (!this.isEnabled()) return { success: false, error: 'Not enabled' };
 
     const invoices = StorageManager.getInvoices();
+    const customers = StorageManager.getCustomers();
+    const products = StorageManager.getItems();
     const url = this.getAppScriptUrl();
+
     try {
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: 'syncAll',
-          invoices: invoices
+          invoices: invoices,
+          customers: customers,
+          products: products
         })
       });
 

@@ -1,29 +1,27 @@
 /**
  * ==============================================================================
- * Google Apps Script for Vikas Billing App (Google Sheet Backend)
+ * Google Apps Script for Vikas Billing App (Google Sheet Cloud Database)
+ * Multi-Sheet Database: Invoices, Customers & Products
  * ==============================================================================
- * Instructions:
- * 1. Open Google Sheets (https://sheets.new)
+ * Instructions to Update/Deploy:
+ * 1. Open your Google Sheet
  * 2. Click: Extensions -> Apps Script
- * 3. Delete any code in the editor and paste this entire code.
- * 4. Click 'Deploy' -> 'New deployment'
- * 5. Select type: 'Web app'
- *    - Description: Vikas Billing API
- *    - Execute as: 'Me' (your email)
- *    - Who has access: 'Anyone' (IMPORTANT!)
- * 6. Click 'Deploy', grant permissions, and copy the Web App URL.
- * 7. Paste that URL into the 'Google Sheets Sync' setting in Vikas Billing App!
+ * 3. Select all code, delete it, and paste this entire code.
+ * 4. Click 'Deploy' -> 'Manage deployments' -> Edit (pencil icon) -> Version: 'New version' -> Click 'Deploy'
+ *    (Or 'Deploy' -> 'New deployment' -> Type: 'Web app' -> Who has access: 'Anyone')
  * ==============================================================================
  */
 
 const SHEET_NAMES = {
   INVOICES: 'Invoices',
   CUSTOMERS: 'Customers',
+  PRODUCTS: 'Products',
   SETTINGS: 'Settings'
 };
 
 /**
- * Handle HTTP GET Requests (Fetch Invoices, Customers, Next Number)
+ * Handle HTTP GET Requests
+ * Actions: getInvoices, getCustomers, getProducts, getNextNumber, ping
  */
 function doGet(e) {
   try {
@@ -34,8 +32,25 @@ function doGet(e) {
     ensureSheetsExist(ss);
 
     if (action === 'getInvoices') {
-      const data = fetchInvoicesFromSheet(ss);
-      return createJsonResponse({ success: true, invoices: data });
+      const invoices = fetchInvoicesFromSheet(ss);
+      const customers = fetchCustomersFromSheet(ss);
+      const products = fetchProductsFromSheet(ss);
+      return createJsonResponse({
+        success: true,
+        invoices: invoices,
+        customers: customers,
+        products: products
+      });
+    }
+
+    if (action === 'getCustomers') {
+      const customers = fetchCustomersFromSheet(ss);
+      return createJsonResponse({ success: true, customers: customers });
+    }
+
+    if (action === 'getProducts') {
+      const products = fetchProductsFromSheet(ss);
+      return createJsonResponse({ success: true, products: products });
     }
 
     if (action === 'getNextNumber') {
@@ -44,7 +59,11 @@ function doGet(e) {
     }
 
     if (action === 'ping') {
-      return createJsonResponse({ success: true, message: 'Vikas Billing Google Sheet Connected!' });
+      return createJsonResponse({
+        success: true,
+        message: 'Vikas Billing Google Sheet Connected!',
+        sheets: [SHEET_NAMES.INVOICES, SHEET_NAMES.CUSTOMERS, SHEET_NAMES.PRODUCTS]
+      });
     }
 
     return createJsonResponse({ success: false, error: 'Unknown action: ' + action });
@@ -54,7 +73,8 @@ function doGet(e) {
 }
 
 /**
- * Handle HTTP POST Requests (Save, Update, Delete Invoice)
+ * Handle HTTP POST Requests
+ * Actions: saveInvoice, saveCustomer, saveProduct, deleteInvoice, syncAll
  */
 function doPost(e) {
   try {
@@ -68,43 +88,90 @@ function doPost(e) {
 
     const action = payload.action || 'saveInvoice';
 
+    // 1. Save / Update Invoice (also auto-updates Customers & Products sheets)
     if (action === 'saveInvoice') {
       const invoice = payload.invoice;
       if (!invoice || !invoice.invoiceNumber) {
         return createJsonResponse({ success: false, error: 'Missing invoice data' });
       }
+
       saveInvoiceToSheet(ss, invoice);
+      autoSyncCustomerFromInvoice(ss, invoice);
+      autoSyncProductsFromInvoice(ss, invoice);
+
       return createJsonResponse({
         success: true,
-        message: 'Invoice ' + invoice.invoiceNumber + ' saved to Google Sheet!',
+        message: 'Invoice ' + invoice.invoiceNumber + ' saved to Invoices, Customers & Products sheets!',
         invoiceNumber: invoice.invoiceNumber
       });
     }
 
+    // 2. Save / Update Customer directly
+    if (action === 'saveCustomer') {
+      const customer = payload.customer;
+      if (!customer || !customer.name) {
+        return createJsonResponse({ success: false, error: 'Customer name is required' });
+      }
+      saveCustomerToSheet(ss, customer);
+      return createJsonResponse({ success: true, message: 'Customer saved to Customers sheet' });
+    }
+
+    // 3. Save / Update Product directly
+    if (action === 'saveProduct') {
+      const product = payload.product;
+      if (!product || !product.name) {
+        return createJsonResponse({ success: false, error: 'Product name is required' });
+      }
+      saveProductToSheet(ss, product);
+      return createJsonResponse({ success: true, message: 'Product saved to Products sheet' });
+    }
+
+    // 4. Delete Invoice
     if (action === 'deleteInvoice') {
       const id = payload.id;
       deleteInvoiceFromSheet(ss, id);
       return createJsonResponse({ success: true, message: 'Invoice deleted from sheet' });
     }
 
+    // 5. Sync All Data (Invoices, Customers, Catalog)
     if (action === 'syncAll') {
       const invoices = payload.invoices || [];
       invoices.forEach(function (inv) {
         saveInvoiceToSheet(ss, inv);
+        autoSyncCustomerFromInvoice(ss, inv);
+        autoSyncProductsFromInvoice(ss, inv);
       });
-      return createJsonResponse({ success: true, count: invoices.length, message: 'Synced all invoices' });
+
+      const customers = payload.customers || [];
+      customers.forEach(function (c) {
+        saveCustomerToSheet(ss, c);
+      });
+
+      const products = payload.products || [];
+      products.forEach(function (p) {
+        saveProductToSheet(ss, p);
+      });
+
+      return createJsonResponse({
+        success: true,
+        invoicesCount: invoices.length,
+        customersCount: customers.length,
+        productsCount: products.length,
+        message: 'All invoices, customers, and products synced to Google Sheet!'
+      });
     }
 
-    return createJsonResponse({ success: false, error: 'Unsupported POST action' });
+    return createJsonResponse({ success: false, error: 'Unsupported POST action: ' + action });
   } catch (err) {
     return createJsonResponse({ success: false, error: err.toString() });
   }
 }
 
 /**
- * Ensures required sheets and column headers exist
+ * Ensures required sheets and column headers exist with clean dark formatting
  */
 function ensureSheetsExist(ss) {
+  // 1. Invoices Sheet
   let invSheet = ss.getSheetByName(SHEET_NAMES.INVOICES);
   if (!invSheet) {
     invSheet = ss.insertSheet(SHEET_NAMES.INVOICES);
@@ -116,39 +183,85 @@ function ensureSheetsExist(ss) {
       'Status', 'Notes', 'Raw JSON', 'Updated At'
     ];
     invSheet.appendRow(headers);
-    invSheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#262626').setFontColor('#ffffff');
-    invSheet.setFrozenRows(1);
+    formatHeaderRow(invSheet, headers.length, '#1e293b');
+  }
+
+  // 2. Customers Sheet
+  let custSheet = ss.getSheetByName(SHEET_NAMES.CUSTOMERS);
+  if (!custSheet) {
+    custSheet = ss.insertSheet(SHEET_NAMES.CUSTOMERS);
+    const custHeaders = [
+      'Customer ID', 'Customer Name', 'Phone', 'Address', 'GSTIN',
+      'Total Bills', 'Total Billed (₹)', 'Last Bill No', 'Last Bill Date', 'Updated At'
+    ];
+    custSheet.appendRow(custHeaders);
+    formatHeaderRow(custSheet, custHeaders.length, '#0f766e'); // Teal header
+  }
+
+  // 3. Products Sheet
+  let prodSheet = ss.getSheetByName(SHEET_NAMES.PRODUCTS);
+  if (!prodSheet) {
+    prodSheet = ss.insertSheet(SHEET_NAMES.PRODUCTS);
+    const prodHeaders = [
+      'Product ID', 'Item Name', 'Rate / Price (₹)', 'HSN / SAC Code', 'Description', 'Updated At'
+    ];
+    prodSheet.appendRow(prodHeaders);
+    formatHeaderRow(prodSheet, prodHeaders.length, '#4338ca'); // Indigo header
+
+    // Seed default products
+    prodSheet.appendRow([
+      'item-1',
+      'Digital Signature Certificate',
+      2000,
+      '998313',
+      'Class 3 DSC (2 Years Validity)',
+      new Date().toISOString()
+    ]);
+    prodSheet.appendRow([
+      'item-2',
+      'DSC TOKEN',
+      500,
+      '8471',
+      'HYP2003 / ProxKey USB Crypto Token',
+      new Date().toISOString()
+    ]);
   }
 }
 
+function formatHeaderRow(sheet, colCount, bgColor) {
+  const range = sheet.getRange(1, 1, 1, colCount);
+  range.setFontWeight('bold')
+    .setBackground(bgColor)
+    .setFontColor('#ffffff')
+    .setFontSize(10);
+  sheet.setFrozenRows(1);
+}
+
 /**
- * Read all invoices from the sheet
+ * Read all invoices from Invoices sheet
  */
 function fetchInvoicesFromSheet(ss) {
   const sheet = ss.getSheetByName(SHEET_NAMES.INVOICES);
   if (!sheet) return [];
 
   const data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return []; // Only header exists
+  if (data.length <= 1) return [];
 
   const invoices = [];
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
-    const rawJson = row[19]; // Col T (Raw JSON)
+    const rawJson = row[19];
 
     if (rawJson && typeof rawJson === 'string' && rawJson.startsWith('{')) {
       try {
         invoices.push(JSON.parse(rawJson));
         continue;
-      } catch (ex) {
-        // Fallback to row fields if JSON parse fails
-      }
+      } catch (ex) {}
     }
 
-    // Reconstruct invoice object from columns
     invoices.push({
-      id: row[0],
-      invoiceNumber: row[1],
+      id: String(row[0]),
+      invoiceNumber: String(row[1]),
       invoiceType: row[2] || 'TAX INVOICE',
       date: formatDate(row[3]),
       dueDate: formatDate(row[4]),
@@ -175,7 +288,67 @@ function fetchInvoicesFromSheet(ss) {
 }
 
 /**
- * Insert or update an invoice in the sheet
+ * Read all customers from Customers sheet
+ */
+function fetchCustomersFromSheet(ss) {
+  const sheet = ss.getSheetByName(SHEET_NAMES.CUSTOMERS);
+  if (!sheet) return [];
+
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+
+  const customers = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (!row[1]) continue; // Skip empty customer names
+
+    customers.push({
+      id: String(row[0] || ('cust-' + i)),
+      name: String(row[1]).trim(),
+      phone: String(row[2] || '').trim(),
+      address: String(row[3] || '').trim(),
+      gstin: String(row[4] || '').trim(),
+      totalBills: Number(row[5]) || 1,
+      totalBilled: Number(row[6]) || 0,
+      lastBillNo: String(row[7] || ''),
+      lastBillDate: formatDate(row[8]),
+      updatedAt: row[9] || ''
+    });
+  }
+
+  return customers;
+}
+
+/**
+ * Read all products from Products sheet
+ */
+function fetchProductsFromSheet(ss) {
+  const sheet = ss.getSheetByName(SHEET_NAMES.PRODUCTS);
+  if (!sheet) return [];
+
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+
+  const products = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (!row[1]) continue;
+
+    products.push({
+      id: String(row[0] || ('item-' + i)),
+      name: String(row[1]).trim(),
+      rate: Number(row[2]) || 0,
+      hsn: String(row[3] || '').trim(),
+      description: String(row[4] || '').trim(),
+      updatedAt: row[5] || ''
+    });
+  }
+
+  return products;
+}
+
+/**
+ * Save or update invoice in Invoices sheet
  */
 function saveInvoiceToSheet(ss, invoice) {
   const sheet = ss.getSheetByName(SHEET_NAMES.INVOICES);
@@ -184,12 +357,11 @@ function saveInvoiceToSheet(ss, invoice) {
   let targetRowIndex = -1;
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) === String(invoice.id) || String(data[i][1]) === String(invoice.invoiceNumber)) {
-      targetRowIndex = i + 1; // 1-indexed for Sheet API
+      targetRowIndex = i + 1;
       break;
     }
   }
 
-  // Generate readable items summary (e.g. "2x DSC, 1x Token")
   const itemsSummary = (invoice.items || []).map(function (it) {
     return (it.qty || 1) + 'x ' + (it.description || it.name || 'Item') + ' (@₹' + (it.rate || 0) + ')';
   }).join('; ');
@@ -226,10 +398,186 @@ function saveInvoiceToSheet(ss, invoice) {
 }
 
 /**
+ * Auto-sync / upsert customer in Customers sheet from invoice
+ */
+function autoSyncCustomerFromInvoice(ss, invoice) {
+  if (!invoice.customer || !invoice.customer.name) return;
+  const custName = String(invoice.customer.name).trim();
+  const custPhone = String(invoice.customer.phone || '').trim();
+
+  const sheet = ss.getSheetByName(SHEET_NAMES.CUSTOMERS);
+  if (!sheet) return;
+
+  const data = sheet.getDataRange().getValues();
+  let targetRowIndex = -1;
+
+  for (let i = 1; i < data.length; i++) {
+    const existingName = String(data[i][1] || '').trim();
+    const existingPhone = String(data[i][2] || '').trim();
+
+    if ((custPhone && existingPhone && custPhone === existingPhone) ||
+        (custName.toLowerCase() === existingName.toLowerCase())) {
+      targetRowIndex = i + 1;
+      break;
+    }
+  }
+
+  if (targetRowIndex > 0) {
+    const existingRow = data[targetRowIndex - 1];
+    const prevCount = Number(existingRow[5]) || 1;
+    const prevTotal = Number(existingRow[6]) || 0;
+
+    const updatedRow = [
+      existingRow[0] || ('cust-' + Date.now()),
+      custName,
+      custPhone || existingRow[2] || '',
+      invoice.customer.address || existingRow[3] || '',
+      invoice.customer.gstin || existingRow[4] || '',
+      prevCount + 1,
+      prevTotal + (Number(invoice.total) || 0),
+      invoice.invoiceNumber,
+      invoice.date || formatDate(new Date()),
+      new Date().toISOString()
+    ];
+    sheet.getRange(targetRowIndex, 1, 1, updatedRow.length).setValues([updatedRow]);
+  } else {
+    sheet.appendRow([
+      'cust-' + Date.now(),
+      custName,
+      custPhone,
+      invoice.customer.address || '',
+      invoice.customer.gstin || '',
+      1,
+      Number(invoice.total) || 0,
+      invoice.invoiceNumber,
+      invoice.date || formatDate(new Date()),
+      new Date().toISOString()
+    ]);
+  }
+}
+
+/**
+ * Auto-sync / upsert products in Products sheet from invoice
+ */
+function autoSyncProductsFromInvoice(ss, invoice) {
+  const items = invoice.items || [];
+  if (!items.length) return;
+
+  const sheet = ss.getSheetByName(SHEET_NAMES.PRODUCTS);
+  if (!sheet) return;
+
+  const data = sheet.getDataRange().getValues();
+
+  items.forEach(function (it, idx) {
+    const itemName = String(it.description || it.name || '').trim();
+    if (!itemName) return;
+
+    let targetRowIndex = -1;
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][1] || '').trim().toLowerCase() === itemName.toLowerCase()) {
+        targetRowIndex = i + 1;
+        break;
+      }
+    }
+
+    if (targetRowIndex > 0) {
+      // Update price / HSN if changed
+      if (it.rate) sheet.getRange(targetRowIndex, 3).setValue(Number(it.rate) || 0);
+      if (it.hsn) sheet.getRange(targetRowIndex, 4).setValue(it.hsn);
+      sheet.getRange(targetRowIndex, 6).setValue(new Date().toISOString());
+    } else {
+      sheet.appendRow([
+        'item-' + Date.now() + '-' + idx,
+        itemName,
+        Number(it.rate) || 0,
+        it.hsn || '',
+        it.description || itemName,
+        new Date().toISOString()
+      ]);
+    }
+  });
+}
+
+/**
+ * Save single customer to Customers sheet
+ */
+function saveCustomerToSheet(ss, customer) {
+  const sheet = ss.getSheetByName(SHEET_NAMES.CUSTOMERS);
+  if (!sheet) return;
+
+  const data = sheet.getDataRange().getValues();
+  let targetRowIndex = -1;
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(customer.id) ||
+        (customer.phone && String(data[i][2]).trim() === String(customer.phone).trim()) ||
+        String(data[i][1]).trim().toLowerCase() === String(customer.name).trim().toLowerCase()) {
+      targetRowIndex = i + 1;
+      break;
+    }
+  }
+
+  const row = [
+    customer.id || ('cust-' + Date.now()),
+    customer.name,
+    customer.phone || '',
+    customer.address || '',
+    customer.gstin || '',
+    Number(customer.totalBills) || 0,
+    Number(customer.totalBilled) || 0,
+    customer.lastBillNo || '',
+    customer.lastBillDate || '',
+    new Date().toISOString()
+  ];
+
+  if (targetRowIndex > 0) {
+    sheet.getRange(targetRowIndex, 1, 1, row.length).setValues([row]);
+  } else {
+    sheet.appendRow(row);
+  }
+}
+
+/**
+ * Save single product to Products sheet
+ */
+function saveProductToSheet(ss, product) {
+  const sheet = ss.getSheetByName(SHEET_NAMES.PRODUCTS);
+  if (!sheet) return;
+
+  const data = sheet.getDataRange().getValues();
+  let targetRowIndex = -1;
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(product.id) ||
+        String(data[i][1]).trim().toLowerCase() === String(product.name).trim().toLowerCase()) {
+      targetRowIndex = i + 1;
+      break;
+    }
+  }
+
+  const row = [
+    product.id || ('item-' + Date.now()),
+    product.name,
+    Number(product.rate) || 0,
+    product.hsn || '',
+    product.description || '',
+    new Date().toISOString()
+  ];
+
+  if (targetRowIndex > 0) {
+    sheet.getRange(targetRowIndex, 1, 1, row.length).setValues([row]);
+  } else {
+    sheet.appendRow(row);
+  }
+}
+
+/**
  * Delete invoice by ID or Number
  */
 function deleteInvoiceFromSheet(ss, id) {
   const sheet = ss.getSheetByName(SHEET_NAMES.INVOICES);
+  if (!sheet) return;
+
   const data = sheet.getDataRange().getValues();
 
   for (let i = 1; i < data.length; i++) {
@@ -241,7 +589,7 @@ function deleteInvoiceFromSheet(ss, id) {
 }
 
 /**
- * Scan sheet to calculate next available invoice number
+ * Scan Invoices sheet to calculate next available invoice number
  */
 function calculateNextInvoiceNumber(ss) {
   const sheet = ss.getSheetByName(SHEET_NAMES.INVOICES);
