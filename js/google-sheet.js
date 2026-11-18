@@ -173,6 +173,10 @@ const GoogleSheetSync = {
   }
 };
 
+if (typeof window !== 'undefined') {
+  window.GoogleSheetSync = GoogleSheetSync;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { GoogleSheetSync };
 }

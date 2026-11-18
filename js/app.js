@@ -431,16 +431,6 @@
       updatedAt: new Date().toISOString()
     };
   }
-      taxType: 'none',
-      taxRate: 0,
-      taxAmount: 0,
-      total: 0,
-      paymentMade: 0,
-      balanceDue: 0,
-      notes: settings.defaultNotes || 'Thanks for your business.',
-      status: 'unpaid'
-    };
-  }
 
   /**
    * Load Invoice Data into Editor Form

@@ -289,6 +289,10 @@ const InvoiceTemplate = {
   }
 };
 
+if (typeof window !== 'undefined') {
+  window.InvoiceTemplate = InvoiceTemplate;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { InvoiceTemplate };
 }

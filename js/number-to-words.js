@@ -92,6 +92,10 @@ function convertNumberToIndianWords(amount, currencyName = 'Indian Rupee') {
   return isNegative ? `Minus ${result}` : result;
 }
 
+if (typeof window !== 'undefined') {
+  window.convertNumberToIndianWords = convertNumberToIndianWords;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { convertNumberToIndianWords };
 }

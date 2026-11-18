@@ -309,6 +309,10 @@ const StorageManager = {
   }
 };
 
+if (typeof window !== 'undefined') {
+  window.StorageManager = StorageManager;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { StorageManager, DEFAULT_SETTINGS, DEFAULT_INVOICE_SAMPLE };
+  module.exports = { StorageManager, DEFAULT_SETTINGS, DEFAULT_ITEMS, DEFAULT_CUSTOMERS, DEFAULT_INVOICE_SAMPLE };
 }
