@@ -8,7 +8,8 @@ import {
   Plus, 
   RefreshCw,
   AlertCircle,
-  Lock
+  Lock,
+  Unlock
 } from 'lucide-react';
 
 export default function Header({
@@ -18,7 +19,8 @@ export default function Header({
   syncStatus,
   syncText,
   businessName,
-  onNewInvoice
+  onNewInvoice,
+  isSettingsUnlocked
 }) {
   const getSyncBadge = () => {
     if (syncStatus === 'connected') {
@@ -136,7 +138,14 @@ export default function Header({
           onClick={() => onTabChange('tab-settings')}
         >
           <Settings size={14} />
-          Settings <Lock size={12} className="text-amber-500 ml-0.5" />
+          Settings
+          {isSettingsUnlocked ? (
+            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded-full" title="Settings Unlocked">
+              <Unlock size={10} className="text-emerald-600" /> Unlocked
+            </span>
+          ) : (
+            <Lock size={12} className="text-amber-500 ml-0.5" title="Settings Locked" />
+          )}
         </button>
       </nav>
     </header>

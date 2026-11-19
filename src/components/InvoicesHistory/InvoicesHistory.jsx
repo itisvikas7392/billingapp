@@ -9,7 +9,9 @@ import {
   CheckCircle2, 
   Clock, 
   DollarSign, 
-  FileCheck 
+  FileCheck,
+  Cloud,
+  CloudUpload
 } from 'lucide-react';
 
 export default function InvoicesHistory({
@@ -18,7 +20,8 @@ export default function InvoicesHistory({
   onCloneInvoice,
   onDeleteInvoice,
   onPrintInvoice,
-  onNewInvoice
+  onNewInvoice,
+  onResyncInvoice
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -194,13 +197,14 @@ export default function InvoicesHistory({
                 <th className="py-3 px-4 text-right">Total (₹)</th>
                 <th className="py-3 px-4 text-right">Balance (₹)</th>
                 <th className="py-3 px-4 text-center">Status</th>
+                <th className="py-3 px-4 text-center">Cloud Sync</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs">
               {filteredInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
+                  <td colSpan={9} className="py-12 text-center text-slate-400">
                     No invoices found matching your criteria.
                   </td>
                 </tr>
@@ -235,6 +239,11 @@ export default function InvoicesHistory({
                           {isPaid ? 'PAID' : 'PENDING'}
                         </span>
                       </td>
+                      <td className="py-3 px-4 text-center">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Synchronized to Cloud">
+                          <Cloud size={11} className="text-emerald-600" /> Synced
+                        </span>
+                      </td>
                       <td className="py-3 px-4 text-right">
                         <div className="inline-flex gap-1.5 items-center">
                           <button
@@ -244,6 +253,15 @@ export default function InvoicesHistory({
                           >
                             <Eye size={12} /> Edit
                           </button>
+                          {onResyncInvoice && (
+                            <button
+                              className="p-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 shadow-2xs transition hover:text-blue-600"
+                              onClick={() => onResyncInvoice(inv.id)}
+                              title="Resync Bill to Google Sheet"
+                            >
+                              <CloudUpload size={13} />
+                            </button>
+                          )}
                           <button
                             className="p-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 shadow-2xs transition"
                             onClick={() => onPrintInvoice(inv.id)}

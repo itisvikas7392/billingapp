@@ -15,6 +15,7 @@ import {
   Layers
 } from 'lucide-react';
 import InvoicePrint from '../InvoicePrint/InvoicePrint';
+import { calculateLineAmount, calculateInvoiceTotals } from '../../utils/billingMath';
 
 export default function InvoiceEditor({
   invoice,
@@ -48,11 +49,7 @@ export default function InvoiceEditor({
   const handleItemChange = (index, field, value) => {
     const items = [...(invoice.items || [])];
     items[index] = { ...items[index], [field]: value };
-
-    // Auto-calculate amount
-    const qty = Number(items[index].qty) || 0;
-    const rate = Number(items[index].rate) || 0;
-    items[index].amount = Number((qty * rate).toFixed(2));
+    items[index].amount = calculateLineAmount(items[index].qty, items[index].rate);
 
     recalculateWithItems(items, invoice.discountType, invoice.discountValue, invoice.taxType, invoice.taxRate, invoice.paymentMade);
   };
@@ -65,7 +62,7 @@ export default function InvoiceEditor({
       hsn: hsn,
       qty: Number(qty) || 1,
       rate: Number(rate) || 0,
-      amount: Number(((Number(qty) || 1) * (Number(rate) || 0)).toFixed(2))
+      amount: calculateLineAmount(qty, rate)
     });
     recalculateWithItems(items, invoice.discountType, invoice.discountValue, invoice.taxType, invoice.taxRate, invoice.paymentMade);
   };
@@ -76,52 +73,24 @@ export default function InvoiceEditor({
   };
 
   const recalculateWithItems = (items, discType, discVal, taxType, taxRate, paidVal) => {
-    const subTotal = items.reduce((sum, it) => sum + (Number(it.amount) || 0), 0);
-
-    // Discount
-    let discountAmount = 0;
-    const dVal = Number(discVal) || 0;
-    if (discType === 'percent') {
-      discountAmount = (subTotal * dVal) / 100;
-    } else {
-      discountAmount = dVal;
-    }
-    if (discountAmount > subTotal) discountAmount = subTotal;
-
-    const afterDiscount = Math.max(0, subTotal - discountAmount);
-
-    // Tax
-    let taxAmount = 0;
-    const tRate = Number(taxRate) || 0;
-    if (taxType && taxType !== 'none' && tRate > 0) {
-      taxAmount = (afterDiscount * tRate) / 100;
-    }
-
-    const total = Number((afterDiscount + taxAmount).toFixed(2));
-    const paymentMade = Number(paidVal) || 0;
-    const balanceDue = Math.max(0, Number((total - paymentMade).toFixed(2)));
-
-    let status = 'paid';
-    if (balanceDue === total && total > 0) {
-      status = 'unpaid';
-    } else if (balanceDue > 0) {
-      status = 'partial';
-    }
+    const totals = calculateInvoiceTotals({
+      items,
+      discountType: discType,
+      discountValue: discVal,
+      taxType,
+      taxRate,
+      paymentMade: paidVal
+    });
 
     onInvoiceChange({
       ...invoice,
       items,
-      subTotal: Number(subTotal.toFixed(2)),
       discountType: discType,
-      discountValue: dVal,
-      discountAmount: Number(discountAmount.toFixed(2)),
+      discountValue: Number(discVal) || 0,
       taxType,
-      taxRate: tRate,
-      taxAmount: Number(taxAmount.toFixed(2)),
-      total,
-      paymentMade,
-      balanceDue,
-      status
+      taxRate: Number(taxRate) || 0,
+      paymentMade: Number(paidVal) || 0,
+      ...totals
     });
   };
 
@@ -165,9 +134,9 @@ export default function InvoiceEditor({
   };
 
   return (
-    <div className="flex flex-1 w-full h-[calc(100vh-65px)] overflow-hidden bg-slate-100">
+    <div className="flex flex-1 w-full h-full min-h-0 overflow-hidden bg-slate-100">
       {/* LEFT COLUMN: FORM CONTROLS */}
-      <div className="w-[48%] min-w-[460px] max-w-[620px] bg-white border-r border-slate-200 overflow-y-auto p-5 pb-20 flex flex-col gap-4.5 shadow-sm">
+      <div className="editor-column no-print w-[48%] min-w-[460px] max-w-[620px] bg-white border-r border-slate-200 overflow-y-auto p-5 pb-20 flex flex-col gap-4.5 shadow-sm">
         {/* Top Mini Toolbar */}
         <div className="flex justify-between items-center pb-3.5 border-b border-slate-100">
           <div className="flex gap-2 items-center">
@@ -252,7 +221,7 @@ export default function InvoiceEditor({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">Payment Terms</label>
               <select
@@ -275,6 +244,19 @@ export default function InvoiceEditor({
                 value={invoice.dueDate || invoice.date || ''}
                 onChange={(e) => updateField('dueDate', e.target.value)}
               />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">Copy Type</label>
+              <select
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none font-bold text-slate-800"
+                value={invoice.copyType || 'ORIGINAL'}
+                onChange={(e) => updateField('copyType', e.target.value)}
+              >
+                <option value="ORIGINAL">ORIGINAL</option>
+                <option value="DUPLICATE">DUPLICATE</option>
+                <option value="TRIPLICATE">TRIPLICATE</option>
+              </select>
             </div>
           </div>
         </div>
@@ -606,9 +588,9 @@ export default function InvoiceEditor({
       </div>
 
       {/* RIGHT COLUMN: LIVE A4 SHEET PREVIEW */}
-      <div className="flex-1 preview-pane-bg overflow-y-auto p-6 flex flex-col items-center">
+      <div className="preview-column flex-1 preview-pane-bg overflow-y-auto p-6 flex flex-col items-center">
         {/* Floating Top Indicator & Quick Actions */}
-        <div className="sticky top-0 z-20 bg-slate-900/95 backdrop-blur-md text-white border border-white/10 px-6 py-2.5 rounded-full flex items-center justify-between gap-6 shadow-2xl mb-6 max-w-xl w-full">
+        <div className="preview-toolbar no-print sticky top-0 z-20 bg-slate-900/95 backdrop-blur-md text-white border border-white/10 px-6 py-2.5 rounded-full flex items-center justify-between gap-6 shadow-2xl mb-6 max-w-xl w-full">
           <div className="flex items-center gap-2.5">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
             <span className="text-xs font-bold tracking-wide text-slate-100 flex items-center gap-1.5">

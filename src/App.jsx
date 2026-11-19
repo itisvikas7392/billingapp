@@ -9,6 +9,7 @@ import SettingsModalAuth from './components/Settings/SettingsModalAuth';
 import Toast from './components/Toast';
 import { StorageManager, DEFAULT_SETTINGS } from './services/storage';
 import { GoogleSheetSync } from './services/googleSheet';
+import { calculateLineAmount, recalculateInvoice } from './utils/billingMath';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('tab-editor');
@@ -307,9 +308,16 @@ export default function App() {
 
   // Customer Management
   const handleAddCustomer = (cust) => {
-    StorageManager.addCustomerIfNew(cust);
-    setCustomers(StorageManager.getCustomers());
-    showToast(`Customer "${cust.name}" added!`);
+    const list = StorageManager.getCustomers();
+    const existingIndex = list.findIndex(c => c.id === cust.id);
+    if (existingIndex >= 0) {
+      list[existingIndex] = cust;
+    } else {
+      list.push(cust);
+    }
+    StorageManager.saveCustomers(list);
+    setCustomers(list);
+    showToast(`Customer "${cust.name}" saved!`);
 
     if (GoogleSheetSync.isEnabled()) {
       GoogleSheetSync.saveCustomer(cust).then(res => {
@@ -328,27 +336,33 @@ export default function App() {
   };
 
   const handleSelectCustomerForBill = (cust) => {
-    setCurrentInvoice(prev => ({
-      ...prev,
-      customer: {
-        name: cust.name || '',
-        phone: cust.phone || '',
-        email: cust.email || '',
-        address: cust.address || '',
-        gstin: cust.gstin || ''
-      }
-    }));
+    const nextInfo = StorageManager.computeNextInvoiceNumber();
+    const blank = createBlankInvoiceHelper(nextInfo.formattedInvoiceNumber, settings);
+    blank.customer = {
+      name: cust.name || '',
+      phone: cust.phone || '',
+      email: cust.email || '',
+      address: cust.address || '',
+      gstin: cust.gstin || ''
+    };
+    setCurrentInvoice(blank);
+    StorageManager.setActiveInvoiceId(blank.id);
     setActiveTab('tab-editor');
-    showToast(`Selected customer ${cust.name}`);
+    showToast(`Started fresh bill for ${cust.name || 'Customer'} (#${blank.invoiceNumber})`);
   };
 
   // Product Management
   const handleAddItem = (item) => {
     const list = StorageManager.getItems();
-    list.push(item);
+    const existingIndex = list.findIndex(i => i.id === item.id);
+    if (existingIndex >= 0) {
+      list[existingIndex] = item;
+    } else {
+      list.push(item);
+    }
     StorageManager.saveItems(list);
     setCatalogItems(list);
-    showToast(`Product "${item.name}" added to catalog!`);
+    showToast(`Product "${item.name}" saved!`);
 
     if (GoogleSheetSync.isEnabled()) {
       GoogleSheetSync.saveProduct(item).then(res => {
@@ -367,30 +381,47 @@ export default function App() {
   };
 
   const handleAddProductToBill = (item) => {
-    const items = [...(currentInvoice.items || [])];
-    items.push({
+    let items = [...(currentInvoice.items || [])];
+
+    // If there is only 1 item and it's empty / untouched default placeholder, replace it
+    const isFirstItemEmpty = items.length === 1 && (!items[0].description || items[0].description.trim() === '' || items[0].amount === 0);
+
+    const newItem = {
       id: 'row-' + Date.now(),
       description: item.name,
       hsn: item.hsn || '',
       qty: 1,
       rate: Number(item.rate) || 0,
-      amount: Number(item.rate) || 0
-    });
+      amount: calculateLineAmount(1, item.rate)
+    };
 
-    const subTotal = items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
-    const total = subTotal;
-    const paymentMade = total;
+    if (isFirstItemEmpty) {
+      items = [newItem];
+    } else {
+      items.push(newItem);
+    }
 
-    setCurrentInvoice(prev => ({
-      ...prev,
-      items,
-      subTotal,
-      total,
-      paymentMade,
-      balanceDue: 0
-    }));
+    const updated = recalculateInvoice(currentInvoice, { items });
+    setCurrentInvoice(updated);
     setActiveTab('tab-editor');
     showToast(`Added ${item.name} to bill!`);
+  };
+
+  // Individual Bill Resync to Google Sheet
+  const handleResyncInvoice = async (invId) => {
+    const inv = invoices.find(i => i.id === invId);
+    if (!inv) return;
+    if (!GoogleSheetSync.isEnabled()) {
+      showToast('⚠️ Google Sheet URL not configured in Settings');
+      return;
+    }
+    showToast(`Syncing ${inv.invoiceNumber} to Google Sheet...`);
+    const res = await GoogleSheetSync.saveInvoice(inv);
+    if (res && res.success) {
+      showToast(`⚡ ${inv.invoiceNumber} synced to Google Sheet!`);
+    } else {
+      showToast(`❌ Sync failed: ${res?.error || 'Unknown error'}`);
+    }
   };
 
   // Settings Save
@@ -412,6 +443,7 @@ export default function App() {
         onPrint={handlePrint}
         onDownloadPdf={handleDownloadPdf}
         isSaving={isSaving}
+        isSettingsUnlocked={isSettingsUnlocked}
       />
 
       <main className="flex-1 flex overflow-hidden">
@@ -445,6 +477,7 @@ export default function App() {
               setTimeout(() => handlePrint(), 150);
             }}
             onNewInvoice={handleNewInvoice}
+            onResyncInvoice={handleResyncInvoice}
           />
         )}
 

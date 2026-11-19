@@ -5,6 +5,26 @@
 
 import { StorageManager } from './storage';
 
+async function fetchWithTimeout(url, options = {}, timeoutMs = 20000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    return res;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error(`Request timed out after ${timeoutMs / 1000} seconds`);
+    }
+    throw err;
+  }
+}
+
 export const GoogleSheetSync = {
   getAppScriptUrl() {
     const settings = StorageManager.getSettings();
@@ -22,7 +42,7 @@ export const GoogleSheetSync = {
 
     try {
       const pingUrl = url.includes('?') ? `${url}&action=ping` : `${url}?action=ping`;
-      const res = await fetch(pingUrl, { method: 'GET' });
+      const res = await fetchWithTimeout(pingUrl, { method: 'GET' }, 10000);
       return await res.json();
     } catch (err) {
       console.warn('Google Sheet ping failed:', err);
@@ -36,10 +56,10 @@ export const GoogleSheetSync = {
     const url = this.getAppScriptUrl();
     try {
       const reqUrl = url.includes('?') ? `${url}&action=getNextNumber` : `${url}?action=getNextNumber`;
-      const res = await fetch(reqUrl, { method: 'GET' });
+      const res = await fetchWithTimeout(reqUrl, { method: 'GET' }, 10000);
       const data = await res.json();
-      if (data && data.success && data.nextInvoiceNumber) {
-        return data.nextInvoiceNumber;
+      if (data && data.success && (data.nextNumber || data.nextInvoiceNumber)) {
+        return data.nextNumber || data.nextInvoiceNumber;
       }
     } catch (err) {
       console.warn('Failed to fetch next number from Google Sheet:', err);
@@ -53,25 +73,19 @@ export const GoogleSheetSync = {
     const url = this.getAppScriptUrl();
     const cleanInvoice = JSON.parse(JSON.stringify(invoice));
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000);
-
     try {
-      const res = await fetch(url, {
+      const res = await fetchWithTimeout(url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: 'saveInvoice',
           invoice: cleanInvoice
-        }),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
+        })
+      }, 20000);
       return await res.json();
     } catch (err) {
-      clearTimeout(timeoutId);
       console.warn('Sync invoice to Google Sheet failed:', err);
-      return { success: false, error: err.name === 'AbortError' ? 'Timeout saving to Google Sheet' : err.message };
+      return { success: false, error: err.message };
     }
   },
 
@@ -80,14 +94,14 @@ export const GoogleSheetSync = {
 
     const url = this.getAppScriptUrl();
     try {
-      const res = await fetch(url, {
+      const res = await fetchWithTimeout(url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: 'saveCustomer',
           customer: customer
         })
-      });
+      }, 15000);
       return await res.json();
     } catch (err) {
       console.warn('Sync customer to Google Sheet failed:', err);
@@ -100,14 +114,14 @@ export const GoogleSheetSync = {
 
     const url = this.getAppScriptUrl();
     try {
-      const res = await fetch(url, {
+      const res = await fetchWithTimeout(url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: 'saveProduct',
           product: product
         })
-      });
+      }, 15000);
       return await res.json();
     } catch (err) {
       console.warn('Sync product to Google Sheet failed:', err);
@@ -121,7 +135,7 @@ export const GoogleSheetSync = {
     const url = this.getAppScriptUrl();
     try {
       const reqUrl = url.includes('?') ? `${url}&action=getInvoices` : `${url}?action=getInvoices`;
-      const res = await fetch(reqUrl, { method: 'GET' });
+      const res = await fetchWithTimeout(reqUrl, { method: 'GET' }, 20000);
       const data = await res.json();
 
       if (data && data.success && Array.isArray(data.invoices)) {
@@ -195,14 +209,14 @@ export const GoogleSheetSync = {
 
     const url = this.getAppScriptUrl();
     try {
-      const res = await fetch(url, {
+      const res = await fetchWithTimeout(url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: 'deleteInvoice',
           id: id
         })
-      });
+      }, 15000);
       return await res.json();
     } catch (err) {
       console.warn('Delete invoice from Google Sheet failed:', err);
@@ -219,7 +233,7 @@ export const GoogleSheetSync = {
     const url = this.getAppScriptUrl();
 
     try {
-      const res = await fetch(url, {
+      const res = await fetchWithTimeout(url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
@@ -228,7 +242,7 @@ export const GoogleSheetSync = {
           customers: customers,
           products: products
         })
-      });
+      }, 30000);
 
       return await res.json();
     } catch (err) {

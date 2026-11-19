@@ -6,7 +6,9 @@ import {
   RefreshCw, 
   Download, 
   Upload,
-  CheckCircle2
+  CheckCircle2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { GoogleSheetSync } from '../../services/googleSheet';
 import { StorageManager } from '../../services/storage';
@@ -24,6 +26,7 @@ export default function SettingsView({
   const [testResult, setTestResult] = useState(null);
   const [isTesting, setIsTesting] = useState(false);
   const [inlinePassword, setInlinePassword] = useState('');
+  const [showInlinePassword, setShowInlinePassword] = useState(false);
   const [inlineError, setInlineError] = useState(false);
 
   if (!isUnlocked) {
@@ -46,19 +49,29 @@ export default function SettingsView({
           }
         }}>
           <div className="max-w-xs mx-auto mb-4">
-            <input
-              type="password"
-              className={`w-full text-sm text-center tracking-widest p-2.5 rounded-xl border ${
-                inlineError ? 'border-rose-500 ring-2 ring-rose-200' : 'border-slate-300 focus:ring-2 focus:ring-blue-500'
-              } focus:outline-none transition`}
-              placeholder="Enter Password"
-              value={inlinePassword}
-              onChange={(e) => {
-                setInlinePassword(e.target.value);
-                if (inlineError) setInlineError(false);
-              }}
-              autoFocus
-            />
+            <div className="relative">
+              <input
+                type={showInlinePassword ? 'text' : 'password'}
+                className={`w-full text-sm text-center tracking-widest p-2.5 pr-10 rounded-xl border ${
+                  inlineError ? 'border-rose-500 ring-2 ring-rose-200' : 'border-slate-300 focus:ring-2 focus:ring-blue-500'
+                } focus:outline-none transition`}
+                placeholder="Enter Password"
+                value={inlinePassword}
+                onChange={(e) => {
+                  setInlinePassword(e.target.value);
+                  if (inlineError) setInlineError(false);
+                }}
+                autoFocus
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                onClick={() => setShowInlinePassword(prev => !prev)}
+                title={showInlinePassword ? 'Hide password' : 'Show password'}
+              >
+                {showInlinePassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
             {inlineError && (
               <div className="text-rose-600 text-xs mt-2 font-medium">
                 ❌ Incorrect password! Please try again.
@@ -340,12 +353,12 @@ export default function SettingsView({
           </div>
         </div>
 
-        {/* Invoice Formatting */}
+        {/* Invoice Formatting & Defaults */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
           <div className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">
             Numbering & Default Formatting
           </div>
-          <div className="grid grid-cols-3 gap-3 items-end">
+          <div className="grid grid-cols-3 gap-3 items-end mb-3">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">Invoice Prefix</label>
               <input
@@ -373,6 +386,87 @@ export default function SettingsView({
                 <RefreshCw size={13} /> Sync Next # from Sheet
               </button>
             </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 mb-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Default Invoice Title</label>
+              <input
+                type="text"
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                value={formData.invoiceTitle || 'TAX INVOICE'}
+                onChange={(e) => setFormData({ ...formData, invoiceTitle: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Default Payment Terms</label>
+              <select
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                value={formData.defaultTerms || 'Due on Receipt'}
+                onChange={(e) => setFormData({ ...formData, defaultTerms: e.target.value })}
+              >
+                <option value="Due on Receipt">Due on Receipt</option>
+                <option value="Net 7 Days">Net 7 Days</option>
+                <option value="Net 15 Days">Net 15 Days</option>
+                <option value="Net 30 Days">Net 30 Days</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Currency Symbol</label>
+              <input
+                type="text"
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                value={formData.currencySymbol || '₹'}
+                onChange={(e) => setFormData({ ...formData, currencySymbol: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Default Tax / GST Type</label>
+              <select
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                value={formData.defaultTaxType || 'none'}
+                onChange={(e) => setFormData({ ...formData, defaultTaxType: e.target.value })}
+              >
+                <option value="none">No Tax (Non-GST)</option>
+                <option value="gst_intra">CGST + SGST (Intra-State / Within State)</option>
+                <option value="gst_inter">IGST (Inter-State / Outside State)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Default Tax Rate (%)</label>
+              <input
+                type="number"
+                step="any"
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                value={formData.defaultTaxRate !== undefined ? formData.defaultTaxRate : 18}
+                onChange={(e) => setFormData({ ...formData, defaultTaxRate: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+          </div>
+
+          <div className="mb-3">
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Default Notes (Appears on Invoice)</label>
+            <textarea
+              rows={2}
+              className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              value={formData.defaultNotes || ''}
+              onChange={(e) => setFormData({ ...formData, defaultNotes: e.target.value })}
+              placeholder="e.g. Thanks for your business."
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Footer Tagline (Bottom of Page)</label>
+            <input
+              type="text"
+              className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              value={formData.footerTagline || ''}
+              onChange={(e) => setFormData({ ...formData, footerTagline: e.target.value })}
+              placeholder="e.g. Crafted with ease using Vikas Billing | Fast & Professional"
+            />
           </div>
         </div>
 
