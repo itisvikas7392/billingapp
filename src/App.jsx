@@ -400,7 +400,7 @@ export default function App() {
   };
 
   return (
-    <div className="app-container">
+    <div className="min-h-screen flex flex-col bg-slate-100 text-slate-900 font-sans antialiased overflow-hidden">
       <Header
         activeTab={activeTab}
         onTabChange={handleTabChange}
@@ -414,7 +414,7 @@ export default function App() {
         isSaving={isSaving}
       />
 
-      <main style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <main className="flex-1 flex overflow-hidden">
         {activeTab === 'tab-editor' && (
           <InvoiceEditor
             invoice={currentInvoice}

@@ -8,9 +8,11 @@ import {
   Copy, 
   ChevronRight, 
   FileText,
-  CheckCircle2,
   RefreshCw,
-  Sparkles
+  Sparkles,
+  User,
+  CreditCard,
+  Layers
 } from 'lucide-react';
 import InvoicePrint from '../InvoicePrint/InvoicePrint';
 
@@ -163,20 +165,20 @@ export default function InvoiceEditor({
   };
 
   return (
-    <div className="flex flex-1 w-full h-[calc(100vh-61px)] overflow-hidden">
+    <div className="flex flex-1 w-full h-[calc(100vh-65px)] overflow-hidden bg-slate-100">
       {/* LEFT COLUMN: FORM CONTROLS */}
-      <div className="w-[48%] min-w-[460px] max-w-[640px] bg-white border-r border-slate-200 overflow-y-auto p-5 pb-16 flex flex-col gap-4">
+      <div className="w-[48%] min-w-[460px] max-w-[620px] bg-white border-r border-slate-200 overflow-y-auto p-5 pb-20 flex flex-col gap-4.5 shadow-sm">
         {/* Top Mini Toolbar */}
-        <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+        <div className="flex justify-between items-center pb-3.5 border-b border-slate-100">
           <div className="flex gap-2 items-center">
             <button 
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition active:scale-95"
               onClick={onNewInvoice}
             >
               <Plus size={14} /> New Bill
             </button>
             <select
-              className="w-48 text-xs py-1.5 px-2.5 rounded-lg border border-slate-300 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-52 text-xs py-1.5 px-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               value={invoice.id}
               onChange={(e) => onSelectPastInvoice(e.target.value)}
             >
@@ -191,32 +193,32 @@ export default function InvoiceEditor({
 
           <div className="flex gap-2 items-center">
             <button 
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-sm transition"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition"
               onClick={onPrint} 
               title="Print A4 Copy (Ctrl+P)"
             >
-              <Printer size={14} /> Print
+              <Printer size={13} /> Print
             </button>
             <button 
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-sm transition"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition"
               onClick={onDownloadPdf} 
               title="Download PDF"
             >
-              <Download size={14} /> PDF
+              <Download size={13} /> PDF
             </button>
           </div>
         </div>
 
-        {/* Invoice Header Details */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-slate-300 transition">
-          <div className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-            <FileText size={14} className="text-blue-600" /> Invoice Metadata
+        {/* 1. Invoice Header Details Card */}
+        <div className="bg-slate-50/70 border border-slate-200 rounded-2xl p-4 transition hover:border-slate-300">
+          <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <FileText size={15} className="text-blue-600" /> Invoice Metadata
           </div>
           <div className="grid grid-cols-3 gap-3 mb-3">
             <div>
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">Bill Type</label>
               <select
-                className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none font-medium"
                 value={invoice.invoiceType || 'TAX INVOICE'}
                 onChange={(e) => updateField('invoiceType', e.target.value)}
               >
@@ -232,7 +234,7 @@ export default function InvoiceEditor({
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">Invoice Number *</label>
               <input
                 type="text"
-                className="w-full text-xs p-2 rounded-lg border border-slate-300 font-mono font-bold text-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 bg-white font-mono font-bold text-blue-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                 value={invoice.invoiceNumber || ''}
                 onChange={(e) => updateField('invoiceNumber', e.target.value)}
                 required
@@ -243,7 +245,7 @@ export default function InvoiceEditor({
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">Invoice Date</label>
               <input
                 type="date"
-                className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none font-medium"
                 value={invoice.date || ''}
                 onChange={(e) => updateField('date', e.target.value)}
               />
@@ -252,9 +254,9 @@ export default function InvoiceEditor({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-semibold text-slate-600 mb-1">Terms</label>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">Payment Terms</label>
               <select
-                className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none font-medium"
                 value={invoice.terms || 'Due on Receipt'}
                 onChange={(e) => updateField('terms', e.target.value)}
               >
@@ -269,7 +271,7 @@ export default function InvoiceEditor({
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">Due Date</label>
               <input
                 type="date"
-                className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none font-medium"
                 value={invoice.dueDate || invoice.date || ''}
                 onChange={(e) => updateField('dueDate', e.target.value)}
               />
@@ -277,14 +279,14 @@ export default function InvoiceEditor({
           </div>
         </div>
 
-        {/* Customer Information */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-slate-300 transition">
+        {/* 2. Customer Information Card */}
+        <div className="bg-slate-50/70 border border-slate-200 rounded-2xl p-4 transition hover:border-slate-300">
           <div className="flex justify-between items-center mb-3">
-            <div className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-blue-600"></span> Customer (Bill To)
+            <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <User size={15} className="text-blue-600" /> Customer (Bill To)
             </div>
             <select
-              className="text-xs py-1 px-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="text-xs py-1 px-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
               onChange={handleQuickCustomerSelect}
               defaultValue=""
             >
@@ -302,7 +304,7 @@ export default function InvoiceEditor({
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">Customer Name *</label>
               <input
                 type="text"
-                className="w-full text-xs p-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 bg-white font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                 placeholder="Enter customer name"
                 value={invoice.customer?.name || ''}
                 onChange={(e) => updateCustomerField('name', e.target.value)}
@@ -314,7 +316,7 @@ export default function InvoiceEditor({
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">Phone Number</label>
               <input
                 type="text"
-                className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                 placeholder="10-digit mobile number"
                 value={invoice.customer?.phone || ''}
                 onChange={(e) => updateCustomerField('phone', e.target.value)}
@@ -327,7 +329,7 @@ export default function InvoiceEditor({
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">GSTIN (Optional)</label>
               <input
                 type="text"
-                className="w-full text-xs p-2 rounded-lg border border-slate-300 uppercase font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 bg-white uppercase font-mono focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                 placeholder="15-digit GSTIN"
                 value={invoice.customer?.gstin || ''}
                 onChange={(e) => updateCustomerField('gstin', e.target.value)}
@@ -338,7 +340,7 @@ export default function InvoiceEditor({
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">Billing Address</label>
               <input
                 type="text"
-                className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                 placeholder="City, State, PIN"
                 value={invoice.customer?.address || ''}
                 onChange={(e) => updateCustomerField('address', e.target.value)}
@@ -347,15 +349,15 @@ export default function InvoiceEditor({
           </div>
         </div>
 
-        {/* Line Items */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-slate-300 transition">
+        {/* 3. Line Items Card */}
+        <div className="bg-slate-50/70 border border-slate-200 rounded-2xl p-4 transition hover:border-slate-300">
           <div className="flex justify-between items-center mb-3">
-            <div className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-              <Sparkles size={14} className="text-amber-500" /> Items & Services
+            <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <Sparkles size={15} className="text-amber-500" /> Items & Services
             </div>
             <div className="flex gap-2">
               <select
-                className="text-xs py-1 px-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none max-w-[200px]"
+                className="text-xs py-1 px-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none max-w-[200px]"
                 value={selectedCatalogId}
                 onChange={(e) => setSelectedCatalogId(e.target.value)}
               >
@@ -367,7 +369,7 @@ export default function InvoiceEditor({
                 ))}
               </select>
               <button 
-                className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 shadow-sm transition"
+                className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs transition"
                 onClick={handleInsertCatalog}
               >
                 + Insert
@@ -375,16 +377,16 @@ export default function InvoiceEditor({
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse mb-2">
+          <div className="overflow-x-auto bg-white rounded-xl border border-slate-200 p-2 mb-2">
+            <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-1.5 px-1 w-[40%]">Description</th>
-                  <th className="py-1.5 px-1 w-[16%]">HSN</th>
-                  <th className="py-1.5 px-1 w-[14%]">Qty</th>
-                  <th className="py-1.5 px-1 w-[16%]">Rate (₹)</th>
-                  <th className="py-1.5 px-1 w-[14%] text-right">Amount (₹)</th>
-                  <th className="py-1.5 px-1 w-6"></th>
+                <tr className="border-b border-slate-200 text-[10.5pt] font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="py-2 px-1 w-[40%] text-xs">Description</th>
+                  <th className="py-2 px-1 w-[16%] text-xs">HSN</th>
+                  <th className="py-2 px-1 w-[14%] text-xs text-right">Qty</th>
+                  <th className="py-2 px-1 w-[16%] text-xs text-right">Rate (₹)</th>
+                  <th className="py-2 px-1 w-[14%] text-xs text-right">Amount (₹)</th>
+                  <th className="py-2 px-1 w-6"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -393,7 +395,7 @@ export default function InvoiceEditor({
                     <td className="py-1.5 px-1">
                       <input
                         type="text"
-                        className="w-full text-xs p-1.5 rounded border border-slate-300 font-medium focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full text-xs p-1.5 rounded-lg border border-slate-300 font-semibold text-slate-900 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                         value={item.description || item.name || ''}
                         onChange={(e) => handleItemChange(index, 'description', e.target.value)}
                         placeholder="Item name"
@@ -402,7 +404,7 @@ export default function InvoiceEditor({
                     <td className="py-1.5 px-1">
                       <input
                         type="text"
-                        className="w-full text-xs p-1.5 rounded border border-slate-300 font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full text-xs p-1.5 rounded-lg border border-slate-300 font-mono text-slate-600 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                         value={item.hsn || ''}
                         onChange={(e) => handleItemChange(index, 'hsn', e.target.value)}
                         placeholder="HSN"
@@ -412,7 +414,7 @@ export default function InvoiceEditor({
                       <input
                         type="number"
                         step="any"
-                        className="w-full text-xs p-1.5 rounded border border-slate-300 text-right focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full text-xs p-1.5 rounded-lg border border-slate-300 text-right font-medium focus:ring-1 focus:ring-blue-500 focus:outline-none"
                         value={item.qty || ''}
                         onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
                       />
@@ -421,17 +423,17 @@ export default function InvoiceEditor({
                       <input
                         type="number"
                         step="any"
-                        className="w-full text-xs p-1.5 rounded border border-slate-300 text-right focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full text-xs p-1.5 rounded-lg border border-slate-300 text-right font-medium focus:ring-1 focus:ring-blue-500 focus:outline-none"
                         value={item.rate || ''}
                         onChange={(e) => handleItemChange(index, 'rate', e.target.value)}
                       />
                     </td>
-                    <td className="py-1.5 px-1 text-right font-bold text-xs text-slate-800 pr-1">
+                    <td className="py-1.5 px-1 text-right font-bold text-xs text-slate-900 pr-1">
                       ₹{Number(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </td>
                     <td className="py-1.5 px-1 text-center">
                       <button
-                        className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                        className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
                         onClick={() => removeItemRow(index)}
                         title="Delete row"
                       >
@@ -445,17 +447,17 @@ export default function InvoiceEditor({
           </div>
 
           <button 
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 mt-1 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-sm transition"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 mt-1 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-2xs transition"
             onClick={() => addItemRow('New Item', 1, 0, '')}
           >
             <Plus size={14} /> + Add Line Item
           </button>
         </div>
 
-        {/* Financial Summary & Taxes */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-slate-300 transition">
-          <div className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
-            Summary & Payment
+        {/* 4. Financial Summary & Taxes Card */}
+        <div className="bg-slate-50/70 border border-slate-200 rounded-2xl p-4 transition hover:border-slate-300">
+          <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <CreditCard size={15} className="text-blue-600" /> Summary & Payment
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -463,7 +465,7 @@ export default function InvoiceEditor({
                 <label className="block text-[11px] font-semibold text-slate-600 mb-1">Discount</label>
                 <div className="flex gap-2">
                   <select
-                    className="w-24 text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-24 text-xs p-2 rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                     value={invoice.discountType || 'flat'}
                     onChange={(e) => handleDiscountChange(e.target.value, invoice.discountValue)}
                   >
@@ -473,7 +475,7 @@ export default function InvoiceEditor({
                   <input
                     type="number"
                     step="any"
-                    className="flex-1 text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="flex-1 text-xs p-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                     placeholder="0"
                     value={invoice.discountValue || ''}
                     onChange={(e) => handleDiscountChange(invoice.discountType || 'flat', e.target.value)}
@@ -485,7 +487,7 @@ export default function InvoiceEditor({
                 <label className="block text-[11px] font-semibold text-slate-600 mb-1">GST / Tax Option</label>
                 <div className="flex gap-2">
                   <select
-                    className="flex-1 text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="flex-1 text-xs p-2 rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                     value={invoice.taxType || 'none'}
                     onChange={(e) => handleTaxChange(e.target.value, invoice.taxRate)}
                   >
@@ -497,7 +499,7 @@ export default function InvoiceEditor({
                     <input
                       type="number"
                       step="any"
-                      className="w-20 text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      className="w-20 text-xs p-2 rounded-lg border border-slate-300 bg-white font-bold text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                       placeholder="18%"
                       value={invoice.taxRate || ''}
                       onChange={(e) => handleTaxChange(invoice.taxType, e.target.value)}
@@ -509,7 +511,7 @@ export default function InvoiceEditor({
               <div>
                 <label className="block text-[11px] font-semibold text-slate-600 mb-1">Notes / Instructions</label>
                 <textarea
-                  className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full text-xs p-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                   rows={2}
                   value={invoice.notes || ''}
                   onChange={(e) => updateField('notes', e.target.value)}
@@ -519,30 +521,30 @@ export default function InvoiceEditor({
             </div>
 
             {/* Calculations Breakdown */}
-            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex flex-col justify-between">
-              <div className="space-y-1.5 text-xs">
+            <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col justify-between shadow-xs">
+              <div className="space-y-2 text-xs">
                 <div className="flex justify-between text-slate-600">
                   <span>Sub Total:</span>
-                  <span className="font-semibold text-slate-800">
+                  <span className="font-bold text-slate-800">
                     ₹{Number(invoice.subTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </span>
                 </div>
 
                 {invoice.discountAmount > 0 && (
-                  <div className="flex justify-between text-emerald-600 font-medium">
+                  <div className="flex justify-between text-emerald-600 font-semibold">
                     <span>Discount:</span>
                     <span>(-) ₹{Number(invoice.discountAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                 )}
 
                 {invoice.taxAmount > 0 && (
-                  <div className="flex justify-between text-blue-600 font-medium">
+                  <div className="flex justify-between text-blue-600 font-semibold">
                     <span>Tax Amount:</span>
                     <span>(+) ₹{Number(invoice.taxAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                 )}
 
-                <div className="flex justify-between pt-2 border-t-2 border-slate-300 text-sm font-extrabold text-slate-900">
+                <div className="flex justify-between pt-2.5 border-t-2 border-slate-300 text-sm font-black text-slate-900">
                   <span>Total Amount:</span>
                   <span>₹{Number(invoice.total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
@@ -553,12 +555,12 @@ export default function InvoiceEditor({
                 <input
                   type="number"
                   step="any"
-                  className="w-full text-xs p-2 rounded-lg border border-slate-300 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full text-xs p-2 rounded-lg border border-slate-300 bg-slate-50 font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                   value={invoice.paymentMade !== undefined ? invoice.paymentMade : ''}
                   onChange={(e) => handlePaymentChange(e.target.value)}
                 />
 
-                <div className={`flex justify-between mt-2 pt-2 border-t border-slate-200 font-bold text-xs ${invoice.balanceDue > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                <div className={`flex justify-between mt-2.5 pt-2 border-t border-slate-200 font-black text-xs ${invoice.balanceDue > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
                   <span>Balance Due:</span>
                   <span>₹{Number(invoice.balanceDue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
@@ -568,9 +570,9 @@ export default function InvoiceEditor({
         </div>
 
         {/* Bottom Action Footer */}
-        <div className="flex gap-3 pt-2 pb-6">
+        <div className="flex gap-3 pt-2 pb-8">
           <button
-            className="flex-1 inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm shadow-md hover:shadow-lg transition transform active:scale-[0.99] disabled:opacity-50"
+            className="flex-1 inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-sm shadow-md hover:shadow-lg transition transform active:scale-[0.99] disabled:opacity-50"
             onClick={onSaveInvoice}
             disabled={isSaving}
           >
@@ -586,7 +588,7 @@ export default function InvoiceEditor({
           </button>
 
           <button
-            className="flex-1 inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm shadow-sm transition transform active:scale-[0.99] disabled:opacity-50"
+            className="flex-1 inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-sm shadow-sm transition transform active:scale-[0.99] disabled:opacity-50"
             onClick={onSaveAndNext}
             disabled={isSaving}
           >
@@ -594,7 +596,7 @@ export default function InvoiceEditor({
           </button>
 
           <button
-            className="inline-flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs shadow-sm transition"
+            className="inline-flex items-center justify-center gap-1.5 py-3.5 px-3.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs shadow-2xs transition"
             onClick={onCloneNext}
             title="Clone items to next invoice"
           >
@@ -604,26 +606,26 @@ export default function InvoiceEditor({
       </div>
 
       {/* RIGHT COLUMN: LIVE A4 SHEET PREVIEW */}
-      <div className="flex-1 bg-slate-100/90 overflow-y-auto p-6 flex flex-col items-center">
+      <div className="flex-1 preview-pane-bg overflow-y-auto p-6 flex flex-col items-center">
         {/* Floating Top Indicator & Quick Actions */}
-        <div className="sticky top-0 z-20 bg-slate-900/95 backdrop-blur-md text-white border border-white/10 px-5 py-2 rounded-full flex items-center justify-between gap-6 shadow-xl mb-6 max-w-xl w-full">
+        <div className="sticky top-0 z-20 bg-slate-900/95 backdrop-blur-md text-white border border-white/10 px-6 py-2.5 rounded-full flex items-center justify-between gap-6 shadow-2xl mb-6 max-w-xl w-full">
           <div className="flex items-center gap-2.5">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
             <span className="text-xs font-bold tracking-wide text-slate-100 flex items-center gap-1.5">
-              📄 Single Page Invoice <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">A4 Guaranteed</span>
+              📄 Single Page Invoice <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">A4 Ready</span>
             </span>
           </div>
 
           <div className="flex gap-2">
             <button 
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md transition transform active:scale-95"
               onClick={onPrint} 
               title="Print Bill (Ctrl + P)"
             >
               <Printer size={13} /> Print Bill
             </button>
             <button 
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/20 transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/20 transition"
               onClick={onDownloadPdf} 
               title="Download PDF"
             >
@@ -632,8 +634,8 @@ export default function InvoiceEditor({
           </div>
         </div>
 
-        {/* The Exact Single Page A4 Invoice */}
-        <div className="overflow-x-auto p-2 flex justify-center w-full">
+        {/* The Exact Single Page A4 Invoice floating on executive background */}
+        <div className="overflow-x-auto p-4 flex justify-center w-full">
           <InvoicePrint invoice={invoice} settings={settings} />
         </div>
       </div>
