@@ -7,3 +7,8 @@ Thumbs.db
 # Logs and scratch files
 *.log
 scratch/
+
+# Dependencies & Build output
+node_modules/
+dist/
+.vite/
