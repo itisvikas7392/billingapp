@@ -6,10 +6,10 @@ import {
   Copy, 
   Trash2, 
   Plus, 
-  ArrowUpRight,
-  CheckCircle,
-  Clock,
-  AlertCircle
+  CheckCircle2, 
+  Clock, 
+  DollarSign, 
+  FileCheck 
 } from 'lucide-react';
 
 export default function InvoicesHistory({
@@ -76,74 +76,104 @@ export default function InvoicesHistory({
   }, [invoices, searchTerm, statusFilter]);
 
   return (
-    <div className="content-page">
-      <div className="page-header-row">
+    <div className="max-w-7xl mx-auto p-6 w-full flex-1 overflow-y-auto">
+      {/* Page Header */}
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="page-title">Invoices History</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>
-            Browse, search, duplicate, and print past invoices.
+          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Invoices History</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Browse, search, duplicate, and print all single-page tax bills.
           </p>
         </div>
-        <button className="btn btn-primary btn-sm" onClick={onNewInvoice}>
+        <button 
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition transform active:scale-95"
+          onClick={onNewInvoice}
+        >
           <Plus size={14} /> + Create New Bill
         </button>
       </div>
 
       {/* KPI Stats Cards */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-label">Total Bills Issued</div>
-          <div className="stat-val">{stats.totalCount}</div>
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Total Bills</span>
+            <FileCheck size={16} className="text-blue-500" />
+          </div>
+          <div className="text-2xl font-black text-slate-900">{stats.totalCount}</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-label">Total Billed (₹)</div>
-          <div className="stat-val text-primary">
+
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Total Billed</span>
+            <DollarSign size={16} className="text-blue-500" />
+          </div>
+          <div className="text-2xl font-black text-blue-600">
             ₹{stats.totalBilled.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-label">Total Received (₹)</div>
-          <div className="stat-val text-green-700">
+
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Total Received</span>
+            <CheckCircle2 size={16} className="text-emerald-500" />
+          </div>
+          <div className="text-2xl font-black text-emerald-600">
             ₹{stats.totalReceived.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-label">Pending Dues (₹)</div>
-          <div className="stat-val text-red-600">
+
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Pending Dues</span>
+            <Clock size={16} className="text-rose-500" />
+          </div>
+          <div className="text-2xl font-black text-rose-600">
             ₹{stats.totalDue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </div>
         </div>
       </div>
 
       {/* Search & Filter Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '1.25rem 0', gap: '1rem', flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', width: '320px' }}>
-          <Search size={15} style={{ position: 'absolute', left: 10, top: 11, color: '#94a3b8' }} />
+      <div className="flex justify-between items-center mb-4 gap-4 flex-wrap">
+        <div className="relative w-80">
+          <Search size={15} className="absolute left-3 top-2.5 text-slate-400" />
           <input
             type="text"
-            className="form-control"
-            style={{ paddingLeft: '2rem' }}
+            className="w-full text-xs pl-9 pr-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white shadow-2xs"
             placeholder="Search by invoice # or customer..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div className="flex gap-2">
           <button
-            className={`btn btn-sm ${statusFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+              statusFilter === 'all'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+            }`}
             onClick={() => setStatusFilter('all')}
           >
             All ({stats.totalCount})
           </button>
           <button
-            className={`btn btn-sm ${statusFilter === 'paid' ? 'btn-primary' : 'btn-secondary'}`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+              statusFilter === 'paid'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+            }`}
             onClick={() => setStatusFilter('paid')}
           >
             Paid ({stats.paidCount})
           </button>
           <button
-            className={`btn btn-sm ${statusFilter === 'pending' ? 'btn-primary' : 'btn-secondary'}`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+              statusFilter === 'pending'
+                ? 'bg-rose-600 text-white shadow-xs'
+                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+            }`}
             onClick={() => setStatusFilter('pending')}
           >
             Pending Dues ({stats.pendingCount})
@@ -152,90 +182,98 @@ export default function InvoicesHistory({
       </div>
 
       {/* Invoices Table */}
-      <div className="table-responsive" style={{ background: '#ffffff', borderRadius: 8, border: '1px solid var(--border-light)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Invoice #</th>
-              <th>Date</th>
-              <th>Customer Name</th>
-              <th>Phone</th>
-              <th style={{ textAlign: 'right' }}>Total (₹)</th>
-              <th style={{ textAlign: 'right' }}>Balance (₹)</th>
-              <th>Status</th>
-              <th style={{ textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredInvoices.length === 0 ? (
-              <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
-                  No invoices found matching your criteria.
-                </td>
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th className="py-3 px-4">Invoice #</th>
+                <th className="py-3 px-4">Date</th>
+                <th className="py-3 px-4">Customer Name</th>
+                <th className="py-3 px-4">Phone</th>
+                <th className="py-3 px-4 text-right">Total (₹)</th>
+                <th className="py-3 px-4 text-right">Balance (₹)</th>
+                <th className="py-3 px-4 text-center">Status</th>
+                <th className="py-3 px-4 text-right">Actions</th>
               </tr>
-            ) : (
-              filteredInvoices.map(inv => {
-                const total = Number(inv.total) || 0;
-                const bal = Number(inv.balanceDue !== undefined ? inv.balanceDue : (total - (Number(inv.paymentMade) || 0)));
-                const isPaid = bal <= 0;
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs">
+              {filteredInvoices.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-slate-400">
+                    No invoices found matching your criteria.
+                  </td>
+                </tr>
+              ) : (
+                filteredInvoices.map(inv => {
+                  const total = Number(inv.total) || 0;
+                  const bal = Number(inv.balanceDue !== undefined ? inv.balanceDue : (total - (Number(inv.paymentMade) || 0)));
+                  const isPaid = bal <= 0;
 
-                return (
-                  <tr key={inv.id}>
-                    <td>
-                      <strong style={{ color: 'var(--primary)' }}>{inv.invoiceNumber}</strong>
-                    </td>
-                    <td>{inv.date || '-'}</td>
-                    <td>{inv.customer?.name || 'CASH CUSTOMER'}</td>
-                    <td>{inv.customer?.phone || '-'}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                      ₹{total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td style={{ textAlign: 'right', fontWeight: 600, color: bal > 0 ? '#dc2626' : '#16a34a' }}>
-                      ₹{bal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td>
-                      <span className={`badge ${isPaid ? 'badge-paid' : 'badge-unpaid'}`}>
-                        {isPaid ? 'PAID' : 'PENDING'}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '0.35rem' }}>
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => onSelectInvoice(inv.id)}
-                          title="Open & Edit in Editor"
-                        >
-                          <Eye size={13} /> Edit
-                        </button>
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => onPrintInvoice(inv.id)}
-                          title="Quick Print"
-                        >
-                          <Printer size={13} />
-                        </button>
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => onCloneInvoice(inv.id)}
-                          title="Duplicate as Next Bill"
-                        >
-                          <Copy size={13} />
-                        </button>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => onDeleteInvoice(inv.id)}
-                          title="Delete Bill"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                  return (
+                    <tr key={inv.id} className="hover:bg-slate-50/70 transition">
+                      <td className="py-3 px-4 font-bold text-blue-600 font-mono">
+                        {inv.invoiceNumber}
+                      </td>
+                      <td className="py-3 px-4 text-slate-600">{inv.date || '-'}</td>
+                      <td className="py-3 px-4 font-semibold text-slate-900">
+                        {inv.customer?.name || 'CASH CUSTOMER'}
+                      </td>
+                      <td className="py-3 px-4 text-slate-600">{inv.customer?.phone || '-'}</td>
+                      <td className="py-3 px-4 text-right font-bold text-slate-900">
+                        ₹{total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className={`py-3 px-4 text-right font-bold ${bal > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                        ₹{bal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          isPaid 
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
+                        }`}>
+                          {isPaid ? 'PAID' : 'PENDING'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="inline-flex gap-1.5 items-center">
+                          <button
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition"
+                            onClick={() => onSelectInvoice(inv.id)}
+                            title="Open & Edit in Editor"
+                          >
+                            <Eye size={12} /> Edit
+                          </button>
+                          <button
+                            className="p-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 shadow-2xs transition"
+                            onClick={() => onPrintInvoice(inv.id)}
+                            title="Quick Print"
+                          >
+                            <Printer size={13} />
+                          </button>
+                          <button
+                            className="p-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 shadow-2xs transition"
+                            onClick={() => onCloneInvoice(inv.id)}
+                            title="Duplicate as Next Bill"
+                          >
+                            <Copy size={13} />
+                          </button>
+                          <button
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                            onClick={() => onDeleteInvoice(inv.id)}
+                            title="Delete Bill"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

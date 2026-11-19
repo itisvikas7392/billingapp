@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Package, Trash2, PlusCircle } from 'lucide-react';
+import { Plus, Trash2, PlusCircle, X } from 'lucide-react';
 
 export default function ProductsCatalog({
   items,
@@ -32,85 +32,98 @@ export default function ProductsCatalog({
   };
 
   return (
-    <div className="content-page">
-      <div className="page-header-row">
+    <div className="max-w-7xl mx-auto p-6 w-full flex-1 overflow-y-auto">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="page-title">Products & Services Catalog</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Products & Services Catalog</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
             Pre-configure frequently billed items, services, HSN/SAC codes, and standard rates.
           </p>
         </div>
-        <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
+        <button 
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition transform active:scale-95"
+          onClick={() => setShowAddModal(true)}
+        >
           <Plus size={14} /> + Add Item
         </button>
       </div>
 
-      <div className="table-responsive" style={{ background: '#ffffff', borderRadius: 8, border: '1px solid var(--border-light)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Item / Service Name</th>
-              <th>Description</th>
-              <th>HSN / SAC</th>
-              <th style={{ textAlign: 'right' }}>Standard Rate (₹)</th>
-              <th style={{ textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.length === 0 ? (
-              <tr>
-                <td colSpan={5} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
-                  No catalog items found. Click "+ Add Item" to create your first product!
-                </td>
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th className="py-3 px-4">Item / Service Name</th>
+                <th className="py-3 px-4">Description</th>
+                <th className="py-3 px-4">HSN / SAC</th>
+                <th className="py-3 px-4 text-right">Standard Rate (₹)</th>
+                <th className="py-3 px-4 text-right">Actions</th>
               </tr>
-            ) : (
-              items.map(item => (
-                <tr key={item.id}>
-                  <td>
-                    <strong style={{ color: 'var(--text-dark)' }}>{item.name}</strong>
-                  </td>
-                  <td>{item.description || '-'}</td>
-                  <td>{item.hsn || '-'}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                    ₹{Number(item.rate || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div style={{ display: 'inline-flex', gap: '0.4rem' }}>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => onAddProductToBill(item)}
-                        title="Add item directly to current invoice"
-                      >
-                        <PlusCircle size={13} style={{ display: 'inline', marginRight: 4 }} />
-                        + Add to Bill
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => onDeleteItem(item.id)}
-                        title="Delete from Catalog"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs">
+              {items.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-slate-400">
+                    No catalog items found. Click "+ Add Item" to create your first product!
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                items.map(item => (
+                  <tr key={item.id} className="hover:bg-slate-50/70 transition">
+                    <td className="py-3 px-4 font-bold text-slate-900">
+                      {item.name}
+                    </td>
+                    <td className="py-3 px-4 text-slate-600">{item.description || '-'}</td>
+                    <td className="py-3 px-4 font-mono text-slate-700">{item.hsn || '-'}</td>
+                    <td className="py-3 px-4 text-right font-bold text-slate-900">
+                      ₹{Number(item.rate || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <div className="inline-flex gap-1.5 items-center">
+                        <button
+                          className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold transition"
+                          onClick={() => onAddProductToBill(item)}
+                          title="Add item directly to current invoice"
+                        >
+                          <PlusCircle size={13} /> + Add to Bill
+                        </button>
+                        <button
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                          onClick={() => onDeleteItem(item.id)}
+                          title="Delete from Catalog"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Add Item Modal */}
       {showAddModal && (
-        <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: '440px' }}>
-            <h3 style={{ marginBottom: '1.25rem', fontSize: '1.2rem' }}>Add Product / Service</h3>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>Item / Service Name *</label>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-base font-extrabold text-slate-900">Add Product / Service</h3>
+              <button 
+                className="text-slate-400 hover:text-slate-600 p-1"
+                onClick={() => setShowAddModal(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Item / Service Name *</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   placeholder="e.g. Class 3 DSC, DSC Token..."
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -119,12 +132,12 @@ export default function ProductsCatalog({
                 />
               </div>
 
-              <div className="form-group">
-                <label>Standard Rate (₹) *</label>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Standard Rate (₹) *</label>
                 <input
                   type="number"
                   step="any"
-                  className="form-control"
+                  className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   placeholder="0.00"
                   value={formData.rate}
                   onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
@@ -132,21 +145,21 @@ export default function ProductsCatalog({
                 />
               </div>
 
-              <div className="form-group">
-                <label>HSN / SAC Code</label>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">HSN / SAC Code</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   placeholder="e.g. 998313 or 8471"
                   value={formData.hsn}
                   onChange={(e) => setFormData({ ...formData, hsn: e.target.value })}
                 />
               </div>
 
-              <div className="form-group">
-                <label>Description (Optional)</label>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Description (Optional)</label>
                 <textarea
-                  className="form-control"
+                  className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   rows={2}
                   placeholder="Brief description or specs"
                   value={formData.description}
@@ -154,16 +167,18 @@ export default function ProductsCatalog({
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+              <div className="flex gap-3 pt-3">
                 <button
                   type="button"
-                  className="btn btn-secondary"
-                  style={{ flex: 1 }}
+                  className="flex-1 py-2 px-3 rounded-lg border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition"
                   onClick={() => setShowAddModal(false)}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+                <button 
+                  type="submit" 
+                  className="flex-1 py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition"
+                >
                   Save Item
                 </button>
               </div>

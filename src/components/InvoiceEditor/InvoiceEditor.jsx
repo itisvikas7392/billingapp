@@ -7,9 +7,10 @@ import {
   Download, 
   Copy, 
   ChevronRight, 
-  UserCheck, 
-  Sparkles,
-  RefreshCw
+  FileText,
+  CheckCircle2,
+  RefreshCw,
+  Sparkles
 } from 'lucide-react';
 import InvoicePrint from '../InvoicePrint/InvoicePrint';
 
@@ -29,7 +30,6 @@ export default function InvoiceEditor({
   onPrint,
   onDownloadPdf
 }) {
-  const [copyMode, setCopyMode] = useState('both');
   const [selectedCatalogId, setSelectedCatalogId] = useState('');
 
   const updateField = (field, value) => {
@@ -163,17 +163,20 @@ export default function InvoiceEditor({
   };
 
   return (
-    <div className="workspace-split">
+    <div className="flex flex-1 w-full h-[calc(100vh-61px)] overflow-hidden">
       {/* LEFT COLUMN: FORM CONTROLS */}
-      <div className="editor-pane">
-        <div className="editor-toolbar">
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <button className="btn btn-primary btn-sm" onClick={onNewInvoice}>
+      <div className="w-[48%] min-w-[460px] max-w-[640px] bg-white border-r border-slate-200 overflow-y-auto p-5 pb-16 flex flex-col gap-4">
+        {/* Top Mini Toolbar */}
+        <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+          <div className="flex gap-2 items-center">
+            <button 
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition"
+              onClick={onNewInvoice}
+            >
               <Plus size={14} /> New Bill
             </button>
             <select
-              className="form-control"
-              style={{ width: '190px', fontSize: '0.82rem', padding: '0.35rem 0.5rem' }}
+              className="w-48 text-xs py-1.5 px-2.5 rounded-lg border border-slate-300 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={invoice.id}
               onChange={(e) => onSelectPastInvoice(e.target.value)}
             >
@@ -186,24 +189,34 @@ export default function InvoiceEditor({
             </select>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <button className="btn btn-secondary btn-sm" onClick={onPrint} title="Print A4 Copy (Ctrl+P)">
+          <div className="flex gap-2 items-center">
+            <button 
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-sm transition"
+              onClick={onPrint} 
+              title="Print A4 Copy (Ctrl+P)"
+            >
               <Printer size={14} /> Print
             </button>
-            <button className="btn btn-secondary btn-sm" onClick={onDownloadPdf} title="Download PDF">
+            <button 
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-sm transition"
+              onClick={onDownloadPdf} 
+              title="Download PDF"
+            >
               <Download size={14} /> PDF
             </button>
           </div>
         </div>
 
         {/* Invoice Header Details */}
-        <div className="form-section">
-          <div className="form-section-title">Invoice Details</div>
-          <div className="grid-3">
-            <div className="form-group">
-              <label>Bill Type</label>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-slate-300 transition">
+          <div className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <FileText size={14} className="text-blue-600" /> Invoice Metadata
+          </div>
+          <div className="grid grid-cols-3 gap-3 mb-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">Bill Type</label>
               <select
-                className="form-control"
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 value={invoice.invoiceType || 'TAX INVOICE'}
                 onChange={(e) => updateField('invoiceType', e.target.value)}
               >
@@ -215,33 +228,33 @@ export default function InvoiceEditor({
               </select>
             </div>
 
-            <div className="form-group">
-              <label>Invoice Number</label>
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">Invoice Number *</label>
               <input
                 type="text"
-                className="form-control"
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 font-mono font-bold text-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 value={invoice.invoiceNumber || ''}
                 onChange={(e) => updateField('invoiceNumber', e.target.value)}
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label>Invoice Date</label>
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">Invoice Date</label>
               <input
                 type="date"
-                className="form-control"
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 value={invoice.date || ''}
                 onChange={(e) => updateField('date', e.target.value)}
               />
             </div>
           </div>
 
-          <div className="grid-2">
-            <div className="form-group">
-              <label>Terms</label>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">Terms</label>
               <select
-                className="form-control"
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 value={invoice.terms || 'Due on Receipt'}
                 onChange={(e) => updateField('terms', e.target.value)}
               >
@@ -252,11 +265,11 @@ export default function InvoiceEditor({
               </select>
             </div>
 
-            <div className="form-group">
-              <label>Due Date</label>
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">Due Date</label>
               <input
                 type="date"
-                className="form-control"
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 value={invoice.dueDate || invoice.date || ''}
                 onChange={(e) => updateField('dueDate', e.target.value)}
               />
@@ -265,12 +278,13 @@ export default function InvoiceEditor({
         </div>
 
         {/* Customer Information */}
-        <div className="form-section">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <div className="form-section-title" style={{ margin: 0 }}>Customer (Bill To)</div>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-slate-300 transition">
+          <div className="flex justify-between items-center mb-3">
+            <div className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-blue-600"></span> Customer (Bill To)
+            </div>
             <select
-              className="form-control"
-              style={{ width: '220px', fontSize: '0.82rem', padding: '0.3rem 0.5rem' }}
+              className="text-xs py-1 px-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               onChange={handleQuickCustomerSelect}
               defaultValue=""
             >
@@ -283,12 +297,12 @@ export default function InvoiceEditor({
             </select>
           </div>
 
-          <div className="grid-2">
-            <div className="form-group">
-              <label>Customer Name *</label>
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">Customer Name *</label>
               <input
                 type="text"
-                className="form-control"
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 placeholder="Enter customer name"
                 value={invoice.customer?.name || ''}
                 onChange={(e) => updateCustomerField('name', e.target.value)}
@@ -296,11 +310,11 @@ export default function InvoiceEditor({
               />
             </div>
 
-            <div className="form-group">
-              <label>Phone Number</label>
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">Phone Number</label>
               <input
                 type="text"
-                className="form-control"
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 placeholder="10-digit mobile number"
                 value={invoice.customer?.phone || ''}
                 onChange={(e) => updateCustomerField('phone', e.target.value)}
@@ -308,23 +322,23 @@ export default function InvoiceEditor({
             </div>
           </div>
 
-          <div className="grid-3">
-            <div className="form-group">
-              <label>GSTIN (Optional)</label>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">GSTIN (Optional)</label>
               <input
                 type="text"
-                className="form-control"
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 uppercase font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 placeholder="15-digit GSTIN"
                 value={invoice.customer?.gstin || ''}
                 onChange={(e) => updateCustomerField('gstin', e.target.value)}
               />
             </div>
 
-            <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label>Address</label>
+            <div className="col-span-2">
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">Billing Address</label>
               <input
                 type="text"
-                className="form-control"
+                className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 placeholder="City, State, PIN"
                 value={invoice.customer?.address || ''}
                 onChange={(e) => updateCustomerField('address', e.target.value)}
@@ -334,113 +348,122 @@ export default function InvoiceEditor({
         </div>
 
         {/* Line Items */}
-        <div className="form-section">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <div className="form-section-title" style={{ margin: 0 }}>Items & Services</div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-slate-300 transition">
+          <div className="flex justify-between items-center mb-3">
+            <div className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+              <Sparkles size={14} className="text-amber-500" /> Items & Services
+            </div>
+            <div className="flex gap-2">
               <select
-                className="form-control"
-                style={{ width: '220px', fontSize: '0.82rem', padding: '0.3rem 0.5rem' }}
+                className="text-xs py-1 px-2.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none max-w-[200px]"
                 value={selectedCatalogId}
                 onChange={(e) => setSelectedCatalogId(e.target.value)}
               >
-                <option value="">-- Choose from Catalog --</option>
+                <option value="">-- Catalog Item --</option>
                 {catalogItems.map(it => (
                   <option key={it.id} value={it.id}>
                     {it.name} (₹{it.rate})
                   </option>
                 ))}
               </select>
-              <button className="btn btn-secondary btn-sm" onClick={handleInsertCatalog}>
+              <button 
+                className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 shadow-sm transition"
+                onClick={handleInsertCatalog}
+              >
                 + Insert
               </button>
             </div>
           </div>
 
-          <table className="editor-items-table">
-            <thead>
-              <tr>
-                <th style={{ width: '42%' }}>Item / Description</th>
-                <th style={{ width: '16%' }}>HSN/SAC</th>
-                <th style={{ width: '12%' }}>Qty</th>
-                <th style={{ width: '16%' }}>Rate (₹)</th>
-                <th style={{ width: '14%' }}>Amount (₹)</th>
-                <th style={{ width: '20px' }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {(invoice.items || []).map((item, index) => (
-                <tr key={item.id || index}>
-                  <td>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={item.description || item.name || ''}
-                      onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                      placeholder="Item name"
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={item.hsn || ''}
-                      onChange={(e) => handleItemChange(index, 'hsn', e.target.value)}
-                      placeholder="HSN code"
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      step="any"
-                      className="form-control"
-                      value={item.qty || ''}
-                      onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      step="any"
-                      className="form-control"
-                      value={item.rate || ''}
-                      onChange={(e) => handleItemChange(index, 'rate', e.target.value)}
-                    />
-                  </td>
-                  <td style={{ textAlign: 'right', fontWeight: 600, paddingRight: '0.5rem' }}>
-                    ₹{Number(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </td>
-                  <td>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      style={{ padding: '0.2rem 0.4rem' }}
-                      onClick={() => removeItemRow(index)}
-                      title="Delete row"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse mb-2">
+              <thead>
+                <tr className="border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="py-1.5 px-1 w-[40%]">Description</th>
+                  <th className="py-1.5 px-1 w-[16%]">HSN</th>
+                  <th className="py-1.5 px-1 w-[14%]">Qty</th>
+                  <th className="py-1.5 px-1 w-[16%]">Rate (₹)</th>
+                  <th className="py-1.5 px-1 w-[14%] text-right">Amount (₹)</th>
+                  <th className="py-1.5 px-1 w-6"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {(invoice.items || []).map((item, index) => (
+                  <tr key={item.id || index}>
+                    <td className="py-1.5 px-1">
+                      <input
+                        type="text"
+                        className="w-full text-xs p-1.5 rounded border border-slate-300 font-medium focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        value={item.description || item.name || ''}
+                        onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                        placeholder="Item name"
+                      />
+                    </td>
+                    <td className="py-1.5 px-1">
+                      <input
+                        type="text"
+                        className="w-full text-xs p-1.5 rounded border border-slate-300 font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        value={item.hsn || ''}
+                        onChange={(e) => handleItemChange(index, 'hsn', e.target.value)}
+                        placeholder="HSN"
+                      />
+                    </td>
+                    <td className="py-1.5 px-1">
+                      <input
+                        type="number"
+                        step="any"
+                        className="w-full text-xs p-1.5 rounded border border-slate-300 text-right focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        value={item.qty || ''}
+                        onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
+                      />
+                    </td>
+                    <td className="py-1.5 px-1">
+                      <input
+                        type="number"
+                        step="any"
+                        className="w-full text-xs p-1.5 rounded border border-slate-300 text-right focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        value={item.rate || ''}
+                        onChange={(e) => handleItemChange(index, 'rate', e.target.value)}
+                      />
+                    </td>
+                    <td className="py-1.5 px-1 text-right font-bold text-xs text-slate-800 pr-1">
+                      ₹{Number(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-1.5 px-1 text-center">
+                      <button
+                        className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                        onClick={() => removeItemRow(index)}
+                        title="Delete row"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-          <button className="btn btn-secondary btn-sm" style={{ marginTop: '0.5rem' }} onClick={() => addItemRow('New Item', 1, 0, '')}>
+          <button 
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 mt-1 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-sm transition"
+            onClick={() => addItemRow('New Item', 1, 0, '')}
+          >
             <Plus size={14} /> + Add Line Item
           </button>
         </div>
 
         {/* Financial Summary & Taxes */}
-        <div className="form-section">
-          <div className="form-section-title">Summary & Payment</div>
-          <div className="grid-2">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-slate-300 transition">
+          <div className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
+            Summary & Payment
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <div className="form-group">
-                <label>Discount</label>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div className="mb-3">
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Discount</label>
+                <div className="flex gap-2">
                   <select
-                    className="form-control"
-                    style={{ width: '100px' }}
+                    className="w-24 text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     value={invoice.discountType || 'flat'}
                     onChange={(e) => handleDiscountChange(e.target.value, invoice.discountValue)}
                   >
@@ -450,7 +473,7 @@ export default function InvoiceEditor({
                   <input
                     type="number"
                     step="any"
-                    className="form-control"
+                    className="flex-1 text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     placeholder="0"
                     value={invoice.discountValue || ''}
                     onChange={(e) => handleDiscountChange(invoice.discountType || 'flat', e.target.value)}
@@ -458,11 +481,11 @@ export default function InvoiceEditor({
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>GST / Tax Option</label>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div className="mb-3">
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">GST / Tax Option</label>
+                <div className="flex gap-2">
                   <select
-                    className="form-control"
+                    className="flex-1 text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     value={invoice.taxType || 'none'}
                     onChange={(e) => handleTaxChange(e.target.value, invoice.taxRate)}
                   >
@@ -474,8 +497,7 @@ export default function InvoiceEditor({
                     <input
                       type="number"
                       step="any"
-                      className="form-control"
-                      style={{ width: '90px' }}
+                      className="w-20 text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                       placeholder="18%"
                       value={invoice.taxRate || ''}
                       onChange={(e) => handleTaxChange(invoice.taxType, e.target.value)}
@@ -484,10 +506,10 @@ export default function InvoiceEditor({
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>Notes / Instructions</label>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Notes / Instructions</label>
                 <textarea
-                  className="form-control"
+                  className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   rows={2}
                   value={invoice.notes || ''}
                   onChange={(e) => updateField('notes', e.target.value)}
@@ -497,122 +519,122 @@ export default function InvoiceEditor({
             </div>
 
             {/* Calculations Breakdown */}
-            <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: 8, border: '1px solid var(--border-light)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Sub Total:</span>
-                <span style={{ fontWeight: 600 }}>₹{Number(invoice.subTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex flex-col justify-between">
+              <div className="space-y-1.5 text-xs">
+                <div className="flex justify-between text-slate-600">
+                  <span>Sub Total:</span>
+                  <span className="font-semibold text-slate-800">
+                    ₹{Number(invoice.subTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+
+                {invoice.discountAmount > 0 && (
+                  <div className="flex justify-between text-emerald-600 font-medium">
+                    <span>Discount:</span>
+                    <span>(-) ₹{Number(invoice.discountAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+
+                {invoice.taxAmount > 0 && (
+                  <div className="flex justify-between text-blue-600 font-medium">
+                    <span>Tax Amount:</span>
+                    <span>(+) ₹{Number(invoice.taxAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between pt-2 border-t-2 border-slate-300 text-sm font-extrabold text-slate-900">
+                  <span>Total Amount:</span>
+                  <span>₹{Number(invoice.total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
               </div>
 
-              {invoice.discountAmount > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', color: '#16a34a' }}>
-                  <span>Discount:</span>
-                  <span>(-) ₹{Number(invoice.discountAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                </div>
-              )}
-
-              {invoice.taxAmount > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', color: '#0284c7' }}>
-                  <span>Tax Amount:</span>
-                  <span>(+) ₹{Number(invoice.taxAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                </div>
-              )}
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.6rem 0', borderTop: '2px solid #e2e8f0', marginTop: '0.5rem', fontSize: '1.15rem', fontWeight: 700, color: '#0f172a' }}>
-                <span>Total Amount:</span>
-                <span>₹{Number(invoice.total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-              </div>
-
-              <div className="form-group" style={{ marginTop: '0.75rem' }}>
-                <label style={{ fontSize: '0.8rem' }}>Payment Received (₹):</label>
+              <div className="mt-3 pt-3 border-t border-dashed border-slate-300">
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Payment Received (₹):</label>
                 <input
                   type="number"
                   step="any"
-                  className="form-control"
+                  className="w-full text-xs p-2 rounded-lg border border-slate-300 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   value={invoice.paymentMade !== undefined ? invoice.paymentMade : ''}
                   onChange={(e) => handlePaymentChange(e.target.value)}
                 />
-              </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderTop: '1px dashed #cbd5e1', marginTop: '0.5rem', fontWeight: 700, color: invoice.balanceDue > 0 ? '#dc2626' : '#16a34a' }}>
-                <span>Balance Due:</span>
-                <span>₹{Number(invoice.balanceDue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <div className={`flex justify-between mt-2 pt-2 border-t border-slate-200 font-bold text-xs ${invoice.balanceDue > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                  <span>Balance Due:</span>
+                  <span>₹{Number(invoice.balanceDue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Bottom Action Footer */}
-        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem', paddingBottom: '2rem' }}>
+        <div className="flex gap-3 pt-2 pb-6">
           <button
-            className="btn btn-primary"
-            style={{ flex: 1.2, padding: '0.75rem 1rem', fontSize: '0.95rem' }}
+            className="flex-1 inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm shadow-md hover:shadow-lg transition transform active:scale-[0.99] disabled:opacity-50"
             onClick={onSaveInvoice}
             disabled={isSaving}
           >
             {isSaving ? (
               <>
-                <RefreshCw size={16} className="spin" style={{ display: 'inline', marginRight: 6 }} />
-                Saving to Sheet...
+                <RefreshCw size={16} className="animate-spin" /> Saving to Sheet...
               </>
             ) : (
               <>
-                <Save size={16} style={{ display: 'inline', marginRight: 6 }} />
-                Save Invoice (Ctrl + S)
+                <Save size={16} /> Save Invoice (Ctrl + S)
               </>
             )}
           </button>
 
           <button
-            className="btn btn-secondary"
-            style={{ flex: 1.2, padding: '0.75rem 1rem', fontSize: '0.95rem' }}
+            className="flex-1 inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm shadow-sm transition transform active:scale-[0.99] disabled:opacity-50"
             onClick={onSaveAndNext}
             disabled={isSaving}
           >
-            <ChevronRight size={16} style={{ display: 'inline', marginRight: 4 }} />
-            Save & Next Bill
+            <ChevronRight size={16} /> Save & Next Bill
           </button>
 
           <button
-            className="btn btn-secondary"
-            style={{ flex: 0.8, padding: '0.75rem 0.5rem', fontSize: '0.88rem' }}
+            className="inline-flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs shadow-sm transition"
             onClick={onCloneNext}
             title="Clone items to next invoice"
           >
-            <Copy size={14} style={{ display: 'inline', marginRight: 4 }} />
-            Clone Bill
+            <Copy size={15} /> Clone Bill
           </button>
         </div>
       </div>
 
       {/* RIGHT COLUMN: LIVE A4 SHEET PREVIEW */}
-      <div className="preview-pane">
-        <div className="preview-toolbar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-dark)' }}>Print View:</span>
-            <select
-              className="form-control"
-              style={{ width: '160px', padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
-              value={copyMode}
-              onChange={(e) => setCopyMode(e.target.value)}
-            >
-              <option value="both">Both (Original + Duplicate)</option>
-              <option value="original">Original Only (1 Page)</option>
-              <option value="duplicate">Duplicate Only (1 Page)</option>
-            </select>
+      <div className="flex-1 bg-slate-100/90 overflow-y-auto p-6 flex flex-col items-center">
+        {/* Floating Top Indicator & Quick Actions */}
+        <div className="sticky top-0 z-20 bg-slate-900/95 backdrop-blur-md text-white border border-white/10 px-5 py-2 rounded-full flex items-center justify-between gap-6 shadow-xl mb-6 max-w-xl w-full">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="text-xs font-bold tracking-wide text-slate-100 flex items-center gap-1.5">
+              📄 Single Page Invoice <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">A4 Guaranteed</span>
+            </span>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button className="btn btn-primary btn-sm" onClick={onPrint}>
-              <Printer size={14} /> Print Bill
+          <div className="flex gap-2">
+            <button 
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow transition"
+              onClick={onPrint} 
+              title="Print Bill (Ctrl + P)"
+            >
+              <Printer size={13} /> Print Bill
             </button>
-            <button className="btn btn-secondary btn-sm" onClick={onDownloadPdf}>
-              <Download size={14} /> PDF
+            <button 
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/20 transition"
+              onClick={onDownloadPdf} 
+              title="Download PDF"
+            >
+              <Download size={13} /> PDF
             </button>
           </div>
         </div>
 
-        <div style={{ overflowX: 'auto', padding: '1rem 0', display: 'flex', justifyContent: 'center' }}>
-          <InvoicePrint invoice={invoice} settings={settings} copyMode={copyMode} />
+        {/* The Exact Single Page A4 Invoice */}
+        <div className="overflow-x-auto p-2 flex justify-center w-full">
+          <InvoicePrint invoice={invoice} settings={settings} />
         </div>
       </div>
     </div>

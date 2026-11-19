@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { 
   Lock, 
-  Unlock, 
   Save, 
   Cloud, 
-  CheckCircle, 
-  AlertCircle, 
   RefreshCw, 
   Download, 
-  Upload 
+  Upload,
+  CheckCircle2
 } from 'lucide-react';
 import { GoogleSheetSync } from '../../services/googleSheet';
 import { StorageManager } from '../../services/storage';
@@ -30,12 +28,12 @@ export default function SettingsView({
 
   if (!isUnlocked) {
     return (
-      <div className="content-page" style={{ maxWidth: 480, margin: '3rem auto', textAlign: 'center', background: '#ffffff', padding: '2.75rem 2rem', borderRadius: 12, border: '1px solid var(--border-light)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-        <div style={{ width: 60, height: 60, margin: '0 auto 1.25rem', background: '#eff6ff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.85rem' }}>
+      <div className="max-w-md mx-auto my-16 text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="w-16 h-16 mx-auto mb-4 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
           🔒
         </div>
-        <h2 style={{ fontSize: '1.3rem', marginBottom: '0.5rem', color: 'var(--text-dark)' }}>Settings is Locked</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+        <h2 className="text-lg font-extrabold text-slate-900 mb-1">Settings is Locked</h2>
+        <p className="text-xs text-slate-500 mb-6 leading-relaxed">
           Business profile, bank details, and Google Sheet database settings are password protected.
         </p>
         <form onSubmit={(e) => {
@@ -47,12 +45,13 @@ export default function SettingsView({
             setInlineError(true);
           }
         }}>
-          <div style={{ maxWidth: 300, margin: '0 auto 1rem' }}>
+          <div className="max-w-xs mx-auto mb-4">
             <input
               type="password"
-              className="form-control"
+              className={`w-full text-sm text-center tracking-widest p-2.5 rounded-xl border ${
+                inlineError ? 'border-rose-500 ring-2 ring-rose-200' : 'border-slate-300 focus:ring-2 focus:ring-blue-500'
+              } focus:outline-none transition`}
               placeholder="Enter Password"
-              style={{ textAlign: 'center', fontSize: '1rem', letterSpacing: 2, borderColor: inlineError ? '#ef4444' : '' }}
               value={inlinePassword}
               onChange={(e) => {
                 setInlinePassword(e.target.value);
@@ -61,12 +60,15 @@ export default function SettingsView({
               autoFocus
             />
             {inlineError && (
-              <div style={{ color: '#ef4444', fontSize: '0.82rem', marginTop: '0.5rem' }}>
+              <div className="text-rose-600 text-xs mt-2 font-medium">
                 ❌ Incorrect password! Please try again.
               </div>
             )}
           </div>
-          <button type="submit" className="btn btn-primary" style={{ minWidth: 140 }}>
+          <button 
+            type="submit" 
+            className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition"
+          >
             Unlock Settings
           </button>
         </form>
@@ -160,105 +162,116 @@ export default function SettingsView({
   };
 
   return (
-    <div className="content-page" style={{ maxWidth: 800 }}>
-      <div className="page-header-row">
+    <div className="max-w-4xl mx-auto p-6 w-full flex-1 overflow-y-auto">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="page-title">Business & Billing Settings</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Business & Billing Settings</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
             Set default business profile, bank details, and Google Sheet integration.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={onLock} title="Lock Settings with Password">
-            🔒 Lock
+        <div className="flex gap-2 items-center">
+          <button 
+            type="button" 
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition" 
+            onClick={onLock} 
+            title="Lock Settings with Password"
+          >
+            <Lock size={13} /> Lock
           </button>
-          <button type="button" className="btn btn-primary btn-sm" onClick={handleFormSubmit}>
-            <Save size={14} style={{ display: 'inline', marginRight: 4 }} /> Save Changes
+          <button 
+            type="button" 
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition" 
+            onClick={handleFormSubmit}
+          >
+            <Save size={14} /> Save Changes
           </button>
         </div>
       </div>
 
-      <form onSubmit={handleFormSubmit}>
+      <form onSubmit={handleFormSubmit} className="space-y-4">
         {/* Business Profile */}
-        <div className="form-section">
-          <div className="form-section-title">Business Profile (Appears on top of Invoice)</div>
-          <div className="form-group">
-            <label>Business / Shop Name *</label>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">
+            Business Profile (Appears on top of Invoice)
+          </div>
+          <div className="mb-3">
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Business / Shop Name *</label>
             <input
               type="text"
-              className="form-control"
+              className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               value={formData.businessName || ''}
               onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
               required
             />
           </div>
 
-          <div className="grid-2">
-            <div className="form-group">
-              <label>Address Line 1</label>
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Address Line 1</label>
               <input
                 type="text"
-                className="form-control"
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 value={formData.addressLine1 || ''}
                 onChange={(e) => setFormData({ ...formData, addressLine1: e.target.value })}
               />
             </div>
-            <div className="form-group">
-              <label>City, State, PIN</label>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">City, State, PIN</label>
               <input
                 type="text"
-                className="form-control"
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 value={formData.addressLine2 || ''}
                 onChange={(e) => setFormData({ ...formData, addressLine2: e.target.value })}
               />
             </div>
           </div>
 
-          <div className="grid-3">
-            <div className="form-group">
-              <label>Country</label>
+          <div className="grid grid-cols-3 gap-3 mb-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Country</label>
               <input
                 type="text"
-                className="form-control"
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 value={formData.country || 'India'}
                 onChange={(e) => setFormData({ ...formData, country: e.target.value })}
               />
             </div>
-            <div className="form-group">
-              <label>Phone / WhatsApp</label>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Phone / WhatsApp</label>
               <input
                 type="text"
-                className="form-control"
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 value={formData.phone || ''}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
             </div>
-            <div className="form-group">
-              <label>Email Address</label>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Email Address</label>
               <input
                 type="email"
-                className="form-control"
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 value={formData.email || ''}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </div>
           </div>
 
-          <div className="grid-2">
-            <div className="form-group">
-              <label>GSTIN (Tax ID)</label>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">GSTIN (Tax ID)</label>
               <input
                 type="text"
-                className="form-control"
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 uppercase font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 value={formData.gstin || ''}
                 onChange={(e) => setFormData({ ...formData, gstin: e.target.value })}
               />
             </div>
-            <div className="form-group">
-              <label>PAN Number</label>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">PAN Number</label>
               <input
                 type="text"
-                className="form-control"
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 uppercase font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 value={formData.pan || ''}
                 onChange={(e) => setFormData({ ...formData, pan: e.target.value })}
               />
@@ -267,56 +280,59 @@ export default function SettingsView({
         </div>
 
         {/* UPI & Bank Details */}
-        <div className="form-section">
-          <div className="form-section-title">Payment, UPI & Bank Account</div>
-          <div className="grid-2">
-            <div className="form-group">
-              <label>UPI ID (For Dynamic Invoice QR Code)</label>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">
+            Payment, UPI & Bank Account
+          </div>
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">UPI ID (For Dynamic Invoice QR Code)</label>
               <input
                 type="text"
-                className="form-control"
-                placeholder="e.g. mobile@upi"
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                placeholder="e.g. 7392045049@upi"
                 value={formData.upiId || ''}
                 onChange={(e) => setFormData({ ...formData, upiId: e.target.value })}
               />
             </div>
 
-            <div className="form-group" style={{ display: 'flex', alignItems: 'center', paddingTop: '1.75rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '0.5rem', margin: 0 }}>
+            <div className="flex items-center pt-5">
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700">
                 <input
                   type="checkbox"
+                  className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4"
                   checked={Boolean(formData.showUpiQr)}
                   onChange={(e) => setFormData({ ...formData, showUpiQr: e.target.checked })}
                 />
-                <span>Print Dynamic UPI QR Code on invoices</span>
+                <span>Print Dynamic UPI QR Code on invoice</span>
               </label>
             </div>
           </div>
 
-          <div className="grid-3">
-            <div className="form-group">
-              <label>Bank Name</label>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Bank Name</label>
               <input
                 type="text"
-                className="form-control"
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 value={formData.bankName || ''}
                 onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
               />
             </div>
-            <div className="form-group">
-              <label>Account Number</label>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Account Number</label>
               <input
                 type="text"
-                className="form-control"
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 value={formData.accountNumber || ''}
                 onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
               />
             </div>
-            <div className="form-group">
-              <label>IFSC Code</label>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">IFSC Code</label>
               <input
                 type="text"
-                className="form-control"
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 uppercase font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 value={formData.ifscCode || ''}
                 onChange={(e) => setFormData({ ...formData, ifscCode: e.target.value })}
               />
@@ -325,88 +341,117 @@ export default function SettingsView({
         </div>
 
         {/* Invoice Formatting */}
-        <div className="form-section">
-          <div className="form-section-title">Numbering & Default Formatting</div>
-          <div className="grid-3">
-            <div className="form-group">
-              <label>Invoice Prefix</label>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">
+            Numbering & Default Formatting
+          </div>
+          <div className="grid grid-cols-3 gap-3 items-end">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Invoice Prefix</label>
               <input
                 type="text"
-                className="form-control"
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 value={formData.invoicePrefix || 'INV-'}
                 onChange={(e) => setFormData({ ...formData, invoicePrefix: e.target.value })}
               />
             </div>
-            <div className="form-group">
-              <label>Next Counter Number</label>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Next Counter Number</label>
               <input
                 type="number"
-                className="form-control"
+                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 value={formData.nextInvoiceNumber || ''}
                 onChange={(e) => setFormData({ ...formData, nextInvoiceNumber: parseInt(e.target.value, 10) || 1 })}
               />
             </div>
-            <div className="form-group" style={{ paddingTop: '1.75rem' }}>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={handleSyncNextNumber}>
-                <RefreshCw size={13} style={{ display: 'inline', marginRight: 4 }} /> Sync Next # from Sheet
+            <div>
+              <button 
+                type="button" 
+                className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition" 
+                onClick={handleSyncNextNumber}
+              >
+                <RefreshCw size={13} /> Sync Next # from Sheet
               </button>
             </div>
           </div>
         </div>
 
         {/* Google Sheet Cloud Database Integration */}
-        <div className="form-section" style={{ borderLeft: '4px solid #16a34a' }}>
-          <div className="form-section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#16a34a' }}>
-            <Cloud size={18} /> Google Sheets Cloud Database (Primary Master)
+        <div className="bg-white border-l-4 border-l-emerald-500 border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            <Cloud size={16} /> Google Sheets Cloud Database (Primary Master)
           </div>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-            All invoices, customer records, and product catalogs are synchronized across 3 dedicated tabs in Google Sheets: <code>Invoices</code>, <code>Customers</code>, and <code>Products</code>.
+          <p className="text-xs text-slate-500 mb-3 leading-relaxed">
+            All invoices, customer records, and product catalogs are synchronized across 3 dedicated tabs in Google Sheets: <code className="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-800">Invoices</code>, <code className="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-800">Customers</code>, and <code className="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-800">Products</code>.
           </p>
 
-          <div className="form-group">
-            <label>Google Apps Script Web App URL</label>
+          <div className="mb-3">
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Google Apps Script Web App URL</label>
             <input
               type="text"
-              className="form-control"
+              className="w-full text-xs p-2.5 rounded-lg border border-slate-300 font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none"
               value={formData.googleSheetUrl || ''}
               onChange={(e) => setFormData({ ...formData, googleSheetUrl: e.target.value })}
               placeholder="https://script.google.com/macros/s/.../exec"
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
-            <button type="button" className="btn btn-primary btn-sm" onClick={handleTestConnection} disabled={isTesting}>
+          <div className="flex gap-2 flex-wrap">
+            <button 
+              type="button" 
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition disabled:opacity-50" 
+              onClick={handleTestConnection} 
+              disabled={isTesting}
+            >
+              {isTesting ? <RefreshCw size={12} className="animate-spin" /> : <CheckCircle2 size={13} />}
               {isTesting ? 'Testing...' : 'Test Connection'}
             </button>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={handleFetchAllFromSheet}>
+            <button 
+              type="button" 
+              className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition" 
+              onClick={handleFetchAllFromSheet}
+            >
               Fetch Latest from Sheet
             </button>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={handleSyncAllToSheet}>
+            <button 
+              type="button" 
+              className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition" 
+              onClick={handleSyncAllToSheet}
+            >
               Sync All Local to Sheet
             </button>
           </div>
         </div>
 
         {/* Data Backup & Restore */}
-        <div className="form-section">
-          <div className="form-section-title">Data Backup & Restore</div>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+            Data Backup & Restore
+          </div>
+          <p className="text-xs text-slate-500 mb-3 leading-relaxed">
             Download an offline JSON snapshot of all invoices, customers, and catalog items.
           </p>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={handleExportJson}>
-              <Download size={14} style={{ display: 'inline', marginRight: 4 }} /> Export All Data (JSON)
+          <div className="flex gap-3">
+            <button 
+              type="button" 
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition" 
+              onClick={handleExportJson}
+            >
+              <Download size={14} /> Export All Data (JSON)
             </button>
-            <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer', margin: 0 }}>
-              <Upload size={14} style={{ display: 'inline', marginRight: 4 }} /> Import Data (JSON)
-              <input type="file" accept=".json" style={{ display: 'none' }} onChange={handleImportJson} />
+            <label className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition cursor-pointer">
+              <Upload size={14} /> Import Data (JSON)
+              <input type="file" accept=".json" className="hidden" onChange={handleImportJson} />
             </label>
           </div>
         </div>
 
-        <div style={{ textAlign: 'right', marginTop: '1.5rem', paddingBottom: '3rem' }}>
-          <button type="submit" className="btn btn-primary">
-            <Save size={16} style={{ display: 'inline', marginRight: 6 }} /> Save All Settings
+        <div className="text-right pt-2 pb-12">
+          <button 
+            type="submit" 
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition"
+          >
+            <Save size={15} /> Save All Settings
           </button>
         </div>
       </form>
