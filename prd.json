@@ -1,252 +1,118 @@
 {
   "project": "VikasBillingApp",
-  "branchName": "ralph/billing-app-github-pages",
-  "description": "Tax & Commercial Billing Web App replicating INV-000155.pdf layout with LocalStorage persistence, GST/Tax calculations, Indian Rupee words converter, dynamic UPI QR code, print/PDF export, and GitHub Pages deployment.",
+  "branchName": "ralph/use-tailwind-css",
+  "description": "Convert Vikas Billing App styling completely to Tailwind CSS with strictly single-page invoice A4 layout, modern SaaS UI, Google Sheets sync, and password protection.",
   "userStories": [
     {
       "id": "US-001",
-      "title": "Create LocalStorage state management and default data schema",
-      "description": "As a user, I want my invoices, business profile, customers, and product catalogs to persist in localStorage so I don't lose data on page reload.",
+      "title": "Configure Tailwind CSS v3 and PostCSS in Vite React project",
+      "description": "As a developer, I want Tailwind CSS and PostCSS configured in the Vite project so that modern utility classes can be used across all components.",
       "acceptanceCriteria": [
-        "Create storage.js with methods: getInvoices, saveInvoice, deleteInvoice, getSettings, saveSettings, getItems, saveItem, getCustomers, saveCustomer",
-        "Initialize default business profile with details from INV-000155 (Vikas Digital Signature Shop, Gursahaiganj, UP 209722, Phone 7392045049, itisvikasprajapati@gmail.com)",
-        "Seed default invoice INV-000155 with Bharat Singh as customer and DSC Certificate + DSC Token items",
-        "Provide JSON export and import capabilities for data backup and restoration",
+        "Install tailwindcss, postcss, and autoprefixer via npm",
+        "Create tailwind.config.js configured for index.html and src/**/*.{js,ts,jsx,tsx} with Inter font and a4 box shadow",
+        "Create postcss.config.js with tailwindcss and autoprefixer plugins",
+        "Update src/index.css with @import for fonts, @tailwind directives, and print media rules",
         "Typecheck passes"
       ],
       "priority": 1,
       "passes": true,
-      "notes": "Implemented in js/storage.js"
+      "notes": "Configured tailwind.config.js, postcss.config.js, and src/index.css"
     },
     {
       "id": "US-002",
-      "title": "Implement Indian currency number-to-words converter",
-      "description": "As an accountant/business owner, I want invoice totals to automatically convert into Indian Rupees in words (Lakhs/Crores format) as seen in INV-000155.pdf.",
+      "title": "Redesign InvoicePrint component with Tailwind CSS and enforce single-page bill",
+      "description": "As a user, I want the invoice preview and printout to be strictly one single A4 page with high-fidelity Tailwind styling matching INV-000155.pdf.",
       "acceptanceCriteria": [
-        "Create number-to-words.js with function convertNumberToIndianWords(amount)",
-        "Correctly converts 2500.00 into 'Indian Rupee Two Thousand Five Hundred Only'",
-        "Handles single digits, tens, hundreds, thousands, lakhs, and crores",
-        "Supports decimal paise conversion when amount has fractional paise",
-        "Typecheck passes"
+        "Eliminate copyMode and duplicate copy logic completely from InvoicePrint",
+        "Render strictly ONE single A4 invoice sheet with fixed 210mm x 295mm dimensions",
+        "Style business header, customer metadata, and line items table with clean Tailwind utilities",
+        "Style words-in-rupees, dynamic UPI QR box, and financial summary with balance due highlight",
+        "Ensure @media print strictly fits on exactly 1 printed page with zero overflow",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
       ],
       "priority": 2,
       "passes": true,
-      "notes": "Implemented in js/number-to-words.js"
+      "notes": "Implemented in src/components/InvoicePrint/InvoicePrint.jsx"
     },
     {
       "id": "US-003",
-      "title": "Implement UPI QR code generator for instant payment",
-      "description": "As a merchant, I want a dynamic UPI QR code rendered on the invoice so customers can scan with PhonePe, Google Pay, or Paytm to pay the balance due.",
+      "title": "Modernize InvoiceEditor with Tailwind CSS and single-page preview badge",
+      "description": "As a merchant, I want the invoice editor form cards and live preview panel styled with Tailwind CSS, with copy mode dropdown removed.",
       "acceptanceCriteria": [
-        "Create qr.js using qrcode-generator or standalone canvas-based QR renderer",
-        "Generates upi://pay?pa={upiId}&pn={businessName}&am={balanceDue}&cu=INR&tn={invoiceNo}",
-        "Updates dynamically when balance due or invoice number changes",
-        "Toggle option in settings to show or hide UPI QR code on the printed invoice",
-        "Typecheck passes"
+        "Remove copyMode selector dropdown and replace with '📄 Single Page Invoice (A4 Guaranteed)' badge",
+        "Style form sections (Invoice Details, Customer, Line Items, Summary & Payment) with Tailwind rounded cards and inputs",
+        "Style bottom action buttons (Save Invoice, Save & Next Bill, Clone Bill) with Tailwind gradients and transitions",
+        "Style line items table with inline delete, rate, quantity, and auto-computed amount",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
       ],
       "priority": 3,
       "passes": true,
-      "notes": "Implemented in js/qr.js"
+      "notes": "Implemented in src/components/InvoiceEditor/InvoiceEditor.jsx"
     },
     {
       "id": "US-004",
-      "title": "Build pixel-perfect invoice template replicating INV-000155.pdf",
-      "description": "As a user, I want the printed and previewed invoice to mirror the layout of INV-000155.pdf exactly, including the header, dark table headers, totals block, and Original/Duplicate badges.",
+      "title": "Style App Header and Navigation with Tailwind CSS",
+      "description": "As a user, I want a modern sticky navigation header with live Google Sheets sync indicator and active tab pills.",
       "acceptanceCriteria": [
-        "Create invoice-template.js rendering the exact layout of INV-000155.pdf",
-        "Includes Business header with name, address, phone, and email",
-        "Includes TAX INVOICE title, # INV-000155, Balance Due widget, Bill To section, and Invoice/Due dates",
-        "Line items table matches PDF styling (#, Item & Description, Qty, Rate, Amount)",
-        "Includes Sub Total, Total, Payment Made (-), Balance Due shaded row, and Total In Words",
-        "Includes Notes ('Thanks for your business.') and Authorized Signature area",
-        "Includes toggle for ORIGINAL / DUPLICATE copies",
+        "Create sticky white header with brand icon and subtitle using Tailwind classes",
+        "Include live Google Sheets sync badge with green pulsing dot",
+        "Include quick '+ New Bill' action button",
+        "Style navigation tabs with active pill states and invoice count badge",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
       "priority": 4,
       "passes": true,
-      "notes": "Implemented in js/invoice-template.js and css/styles.css"
+      "notes": "Implemented in src/components/Header.jsx"
     },
     {
       "id": "US-005",
-      "title": "Build interactive invoice editor and management dashboard UI",
-      "description": "As a user, I want an intuitive dashboard where I can edit invoices, add line items, calculate taxes, record payments, and view invoice history.",
+      "title": "Style Invoices History, Customer Directory, and Catalog with Tailwind CSS",
+      "description": "As a user, I want past invoices, customer directory, and product catalog tables styled cleanly with Tailwind CSS.",
       "acceptanceCriteria": [
-        "Create responsive layout with Invoice Editor, Live Preview panel, and Invoices List tab",
-        "Add, edit, remove line items with automatic subtotal, tax (GST/CGST/SGST/IGST), discount, and balance due calculations",
-        "Save invoice, create new invoice, duplicate existing invoice, and delete invoice",
-        "Status badges: Paid, Partial, Unpaid",
-        "Customer autocomplete / quick-select from saved customers",
+        "InvoicesHistory: Style 4 KPI cards (Total Bills, Total Billed, Total Received, Pending Dues) and data table",
+        "InvoicesHistory: Search bar and status filter buttons (All, Paid, Pending Dues)",
+        "CustomersList: Directory table with total bills count and 'Bill Now' action button",
+        "ProductsCatalog: Products table with HSN codes and '+ Add to Bill' action button",
+        "Style modal dialogs with backdrop blur and smooth transitions",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
       "priority": 5,
       "passes": true,
-      "notes": "Implemented in index.html, js/app.js, and css/styles.css"
+      "notes": "Implemented in InvoicesHistory.jsx, CustomersList.jsx, and ProductsCatalog.jsx"
     },
     {
       "id": "US-006",
-      "title": "Implement print-to-PDF and direct PDF download functionality",
-      "description": "As a user, I want to print or save the invoice as an A4 PDF with clean typography, proper page margins, and zero UI clutter.",
+      "title": "Style Settings View and Password Authentication Modal (Vik@8604) with Tailwind CSS",
+      "description": "As an admin, I want password-protected settings with clean Tailwind card sections and error indicators.",
       "acceptanceCriteria": [
-        "Add @media print styles that hide buttons, navigation, and sidebar, isolating only the A4 invoice sheet",
-        "Support 1-click browser Print dialog (Ctrl+P or Print button)",
-        "Support direct PDF download using HTML5 canvas / print renderer",
-        "Options to print ORIGINAL copy, DUPLICATE copy, or both pages consecutively like the source PDF",
+        "Style locked settings screen and password prompt modal for Vik@8604 using Tailwind",
+        "Style Business Profile, Bank & UPI, Numbering, and Google Sheets cloud integration cards",
+        "Include Test Connection, Fetch from Sheet, and Sync All to Sheet buttons",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
       "priority": 6,
       "passes": true,
-      "notes": "Implemented in css/styles.css and js/app.js"
+      "notes": "Implemented in SettingsView.jsx and SettingsModalAuth.jsx"
     },
     {
       "id": "US-007",
-      "title": "Configure GitHub Pages deployment and documentation",
-      "description": "As a developer, I want this app to be 100% compatible with GitHub Pages with zero build step and include an automated GitHub Actions deployment workflow.",
+      "title": "Verify complete Vite production build and browser verification",
+      "description": "As a developer, I want to ensure the entire application compiles with zero build errors and renders cleanly in the browser.",
       "acceptanceCriteria": [
-        "All asset references in index.html and JS use relative paths (./) for subdirectory hosting",
-        "Create .github/workflows/deploy.yml for GitHub Pages automated deployment",
-        "Create comprehensive README.md with live demo setup, features, and deployment instructions",
-        "Typecheck passes"
+        "Run `npm run build` with zero errors and zero warnings",
+        "Verify dev server runs on http://localhost:5173",
+        "Verify all tabs and single-page A4 invoice preview render properly",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
       ],
       "priority": 7,
       "passes": true,
-      "notes": "Configured relative paths, workflow, and README.md"
-    },
-    {
-      "id": "US-008",
-      "title": "Implement automated sequential invoice numbering and collision prevention",
-      "description": "As a user, I want the invoice number to automatically advance sequentially whenever I save or start a new invoice without duplicates.",
-      "acceptanceCriteria": [
-        "Create computeNextInvoiceNumber in storage.js to find the highest existing number across all stored invoices and auto-increment by 1",
-        "Add 'Save & Next Invoice (+1)' button that saves the active invoice and creates a fresh invoice with the incremented number",
-        "Add '+ New Bill' button with automatic sequential number assignment",
-        "Typecheck passes"
-      ],
-      "priority": 8,
-      "passes": true,
-      "notes": "Implemented in storage.js and app.js"
-    },
-    {
-      "id": "US-009",
-      "title": "Implement instant past invoice retrieval, quick switcher, and history filters",
-      "description": "As a user, I want to quickly search, switch to, and view or edit any previous invoice directly from the editor or history tab.",
-      "acceptanceCriteria": [
-        "Add quick-invoice-box dropdown directly above the editor for 1-click loading of any past invoice",
-        "Add real-time filter pills: All Invoices, Paid, and Balance Due (Pending)",
-        "Add financial summary stat cards: Total Invoices, Total Billed, Total Received, and Balance Due",
-        "Search bar filters across invoice number, customer name, phone, date, and amount",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 9,
-      "passes": true,
-      "notes": "Implemented in index.html, styles.css, and app.js"
-    },
-    {
-      "id": "US-010",
-      "title": "Implement Google Sheets & Apps Script Cloud Database Sync",
-      "description": "As a business owner, I want my invoices to sync to Google Sheets via Google Apps Script so that I have a free cloud database accessible from any device or phone.",
-      "acceptanceCriteria": [
-        "Create Google Apps Script backend Code.gs handling doGet and doPost Web App requests",
-        "Create js/google-sheet.js client sync module handling save, fetch, and ping",
-        "Add Google Sheet Web App URL setting and sync actions in Settings tab",
-        "Add Google Sheet connection status badge in app header",
-        "Typecheck passes"
-      ],
-      "priority": 10,
-      "passes": true,
-      "notes": "Implemented in google-apps-script/Code.gs, js/google-sheet.js, and index.html"
-    },
-    {
-      "id": "US-011",
-      "title": "Auto-fetch Google Sheet on startup and eliminate LocalStorage options from UI",
-      "description": "As a user, I want the web app to automatically fetch all invoices directly from Google Sheet on startup and eliminate all LocalStorage mode options so Google Sheet is the sole primary cloud database.",
-      "acceptanceCriteria": [
-        "Web app automatically triggers autoFetchFromGoogleSheet() on initial page load",
-        "Header badge displays dynamic status: Loading -> Google Sheet Database (N Bills)",
-        "Latest invoice from Google Sheet is automatically loaded into the active editor and preview",
-        "Customers from sheet invoices are automatically extracted into the customer directory",
-        "Next invoice number is automatically computed from the maximum number in Google Sheet",
-        "Remove all LocalStorage mode badges, options, and upload buttons from the UI",
-        "Typecheck passes"
-      ],
-      "priority": 11,
-      "passes": true,
-      "notes": "Implemented in js/app.js, js/google-sheet.js, and index.html"
-    },
-    {
-      "id": "US-012",
-      "title": "Integrate Google Sheet getNextNumber API for server-authoritative sequential numbering",
-      "description": "As a merchant, I want the client to query Google Sheet for the authoritative next invoice number so that multiple tabs or devices never collide or create duplicate bill numbers.",
-      "acceptanceCriteria": [
-        "Add getNextInvoiceNumber() in js/google-sheet.js that requests ?action=getNextNumber from Apps Script Web App",
-        "Fall back gracefully to StorageManager.computeNextInvoiceNumber() when offline",
-        "Return standard 6-digit zero-padded invoice number (e.g. INV-000156)",
-        "Typecheck passes"
-      ],
-      "priority": 12,
-      "passes": true,
-      "notes": "Implemented in js/google-sheet.js"
-    },
-    {
-      "id": "US-013",
-      "title": "Auto-create ready-to-bill fresh draft with next sequential number on startup",
-      "description": "As a shopkeeper, when opening the website, I want a fresh blank invoice ready with the next auto-incremented number so I can immediately bill the next customer without overwriting past bills.",
-      "acceptanceCriteria": [
-        "On initial launch after loading Google Sheet records, auto-initialize a fresh draft with the next sequential number",
-        "Preserve past completed bills (INV-000155) in the quick selector dropdown and history tab",
-        "Show badge indicator 'INV-000156 (New Bill Ready)'",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 13,
-      "passes": true,
-      "notes": "Implemented in js/app.js autoFetchFromGoogleSheet and createBlankInvoice"
-    },
-    {
-      "id": "US-014",
-      "title": "Automate sequence advancement on Save & Next and Print workflows",
-      "description": "As a user, when I finish and print or save an invoice, I want the system to save it to Google Sheet and automatically advance the editor to the next sequential invoice number.",
-      "acceptanceCriteria": [
-        "Clicking 'Save & Next (+1)' saves current bill to Google Sheet and immediately loads the next sequential invoice number",
-        "Add keyboard shortcut Ctrl+Enter to trigger Save & Next",
-        "Provide setting toggle 'Auto-advance to next bill after Print / PDF export'",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 14,
-      "passes": true,
-      "notes": "Implemented in js/app.js saveAndCreateNextInvoice and handlePrint"
-    },
-    {
-      "id": "US-015",
-      "title": "Saved invoice overwrite protection and Save as New Bill (+1) action",
-      "description": "As a user, when reviewing a previously saved invoice, I want visual protection against accidental overwrites with an easy option to clone as a new sequential bill.",
-      "acceptanceCriteria": [
-        "Display clear badge '🔒 Saved Bill: INV-000155 (Viewing Past Record)' when a saved invoice is loaded",
-        "Add 'Save as New Bill (+1)' button that clones customer and line items to the next sequential number instead of modifying the past bill",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 15,
-      "passes": true,
-      "notes": "Implemented in index.html btn-clone-next-bill and js/app.js cloneAsNewBill"
-    },
-    {
-      "id": "US-016",
-      "title": "Settings sequence synchronizer and custom invoice prefix support",
-      "description": "As an admin, I want to view, verify, and resynchronize the next invoice sequence number directly from Google Sheet in the Settings tab.",
-      "acceptanceCriteria": [
-        "Display live Next Invoice Number in Settings tab with 'Re-sync Sequence from Google Sheet' button",
-        "Allow customizable invoice prefix (default 'INV-') preserved across all new invoices",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 16,
-      "passes": true,
-      "notes": "Implemented in index.html btn-sync-next-number and js/app.js handleSyncNextNumberFromSheet"
+      "notes": "Verified via npm run build and live dev server on port 5173"
     }
   ]
 }
